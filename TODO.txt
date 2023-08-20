@@ -1,3 +1,5 @@
 - File location/directory checking and error handling. "userData" and the respective directory structure will need to be initiated and verified.
 - Add user modifiable settings for storage of data structure
 	- What about a .gitignore?
+- Statusbar: 
+	- List the path of selection "Category / Specific file"
