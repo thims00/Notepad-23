@@ -3,3 +3,7 @@
 	- What about a .gitignore?
 - Statusbar: 
 	- List the path of selection "Category / Specific file"
+
+- Make the file list sorted alphanumerically
+
+- Begin incorporating keyboard shortcuts for save, undo/redo, etc.
