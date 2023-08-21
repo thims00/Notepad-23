@@ -1,0 +1,8 @@
+- Archive feature to allow easily backing up to a flat file, directory, or zip,gzip,bzip, etc.
+- Export feature for dropping specific files to pastebin
+- Github export
+
+
+Keybindings:
+- Vim style keybindings for navigation
+	- With modifiers for word, sentence skipping.
