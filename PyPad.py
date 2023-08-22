@@ -8,9 +8,12 @@ from tkinter import messagebox
 
 
 class PyPadGUI():
-    categ_path = "./userData/Categories/"
-
-
+    ctgry_path = "./userData/Categories/"
+    slctn_path = {'ctgry' : '', 'file' : ''}
+    
+    
+    
+    
     def __init__(self):
         self.__GUI__()
         self.__file_menu__()
@@ -19,7 +22,10 @@ class PyPadGUI():
         self.__files__()
         self.__notepad__()
     
-    
+
+    '''
+    Local GUI Methods
+    '''
     def __GUI__(self):
         self.root = Tk()
         self.root.geometry("777x575")
@@ -80,28 +86,28 @@ class PyPadGUI():
 
 
         # Categories Listview
-        self.cat_list_frame = Frame(self.left_frame)
-        self.cat_list_frame.pack(side="top")
+        self.ctgry_list_frame = Frame(self.left_frame)
+        self.ctgry_list_frame.pack(side="top")
 
-        self.cat_scrllbr = Scrollbar(self.cat_list_frame)
+        self.cat_scrllbr = Scrollbar(self.ctgry_list_frame)
         self.cat_scrllbr.pack(side=RIGHT, fill=Y)
 
-        self.cat_list = Listbox(self.cat_list_frame)#, yscrollcommand=cat_scrllbr.set)
+        self.ctgry_list = Listbox(self.ctgry_list_frame)#, yscrollcommand=cat_scrllbr.set)
         
         # Populate categories by directory structure
-        if path.isdir(self.categ_path):
-            categories = os.listdir(self.categ_path)
+        if path.isdir(self.ctgry_path):
+            categories = os.listdir(self.ctgry_path)
             categories.sort()
         else:
-            print("ERROR: ", self.categ_path, ": does not exist.")
+            print("ERROR: ", self.ctgry_path, ": does not exist.")
             os.exit(1)
         n = 0
         for categ in categories:
-            self.cat_list.insert(n, categ)
-            self.cat_list.bind('<Double-1>', "") #categ_dc_event)
+            self.ctgry_list.insert(n, categ)
+            self.ctgry_list.bind('<Double-1>', self.category_dblClick_event)
             n += 1
             
-        self.cat_list.pack(side="top")
+        self.ctgry_list.pack(side="top")
 
 
     def __files__(self):
@@ -125,6 +131,103 @@ class PyPadGUI():
         self.notepad = Text(self.right_frame)
         self.notepad.pack(side="right", fill="both", expand=1)
 
-    
+
     def mainloop(self):
         self.root.mainloop()
+        
+        
+    '''
+    Public GUI Events
+    '''
+    def category_dblClick_event(self, event):
+        self.notepad_clear()
+    
+        lbox = self.ctgry_list.curselection()[0]
+        selctn = self.ctgry_list.get(lbox)
+        self.slctn_path['ctgry'] = selctn
+        
+        # Clear the filename listbox
+        self.file_list.delete(0, END)
+        
+        # Get our files from userData
+        files = self.files_get(selctn)
+        
+        # Update our file listbox
+        
+        for file in files:
+            self.file_list.insert(END, file)
+            self.file_list.bind('<Double-1>', self.notepad_write)
+
+
+    '''
+    Public Category Methods
+    '''
+    def category_add(self):
+        ctg_win = Toplevel(root)
+        ctg_win.geometry("200x200")
+        ctg_win.title("Child Window")
+        
+        lbl = Label(ctg_win, text="Label:")
+        lbl.pack(side="left")
+        
+        add_categ_var = ""
+        entry = Entry(ctg_win, textvariable=add_categ_var)
+        entry.pack(side="right")
+        
+        btn = Button(ctg_win, text="Ok", command=ctg_win.destroy)
+        btn.pack(side="bottom")
+
+
+    ''' 
+    Public Files Methods
+    '''
+    def files_get(self, event):
+        files = []
+
+        for file in os.listdir(self.ctgry_path + self.slctn_path['ctgry']):
+            files.append(file)
+                
+        return files
+
+
+    '''
+    Public Notepad Methods
+    '''
+    def notepad_write(self, event):
+        indx = self.file_list.curselection()[0]
+        read_file = self.file_list.get(indx)
+        self.slctn_path['file'] = read_file
+        
+        try:
+            fd = os.open(self.ctgry_path + self.slctn_path['ctgry'] + \
+                 "/" + self.slctn_path['file'], os.O_RDONLY)
+        except FileNotFoundError:
+            print("ERROR: that file does not exist. TODO: Make this a messageBOX")
+        
+        self.notepad.delete("0.0", END)
+        
+        chunk = os.read(fd, 1024)
+        while chunk != b'':
+            self.notepad.insert(END, chunk)
+            chunk = os.read(fd, 1024)
+        
+        os.close(fd)
+    
+    
+    def notepad_clear(self):
+        #save_notepad()
+        self.notepad.delete("0.0", END)
+    
+    
+    def notepad_save(self):
+        try:
+            fd = os.open("./userData/Categories/" + self.slctn_path['ctgry'] + "/" \
+                + self.slctn_path['file'], os.O_WRONLY|os.O_CREAT)
+        except FileNotFoundError:
+            print("ERROR: A weird one.")
+            
+        # TODO: Make this section write through chunks from notepad
+        blob = self.notepad.get("0.0", END).encode()
+        os.write(fd, blob)
+        
+        os.close(fd)
