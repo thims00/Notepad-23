@@ -9,7 +9,7 @@ from tkinter import messagebox
 
 class PyPadGUI():
     ctgry_path = "./userData/Categories/"
-    slctn_path = {'ctgry' : '', 'file' : ''}
+    slctn_path = {'ctgry' : None, 'file' : None}
     
     
     
@@ -119,16 +119,13 @@ class PyPadGUI():
         self.file_scrllbr.pack(side=RIGHT, fill=Y)
 
         self.file_list = Listbox(self.file_list_frame)#, yscrollcommand=self.file_scrllbr.set)
-        self.file_list.insert(0, "species.txt")
-        self.file_list.insert(1, "recipes.txt")
-        self.file_list.insert(2, "procedures.txt")
-        self.file_list.insert(3, "notes.txt")
         self.file_list.pack(side="top")
 
 
     def __notepad__(self):
         # Notepad Window
         self.notepad = Text(self.right_frame)
+        self.notepad_disable()
         self.notepad.pack(side="right", fill="both", expand=1)
 
 
@@ -140,11 +137,12 @@ class PyPadGUI():
     Public GUI Events
     '''
     def category_dblClick_event(self, event):
-        self.notepad_clear()
+        self.notepad_change()
     
         lbox = self.ctgry_list.curselection()[0]
         selctn = self.ctgry_list.get(lbox)
         self.slctn_path['ctgry'] = selctn
+        self.slctn_path['file'] = ''
         
         # Clear the filename listbox
         self.file_list.delete(0, END)
@@ -156,7 +154,21 @@ class PyPadGUI():
         
         for file in files:
             self.file_list.insert(END, file)
-            self.file_list.bind('<Double-1>', self.notepad_write)
+            self.file_list.bind('<Double-1>', self.file_dblClick_event)
+
+        self.notepad_disable()
+        
+
+    def file_dblClick_event(self, event):
+        if self.slctn_path['file'] != '':
+            self.notepad_save()
+            
+        indx = self.file_list.curselection()[0]
+        read_file = self.file_list.get(indx)
+        self.slctn_path['file'] = read_file
+
+        self.notepad_clear()
+        self.notepad_open(self.slctn_path['file'])
 
 
     '''
@@ -193,41 +205,70 @@ class PyPadGUI():
     '''
     Public Notepad Methods
     '''
-    def notepad_write(self, event):
-        indx = self.file_list.curselection()[0]
-        read_file = self.file_list.get(indx)
-        self.slctn_path['file'] = read_file
+    def notepad_change(self):
+        self.notepad_save()
+        self.notepad_clear()
+        self.notepad.edit_modified(False)
         
-        try:
-            fd = os.open(self.ctgry_path + self.slctn_path['ctgry'] + \
-                 "/" + self.slctn_path['file'], os.O_RDONLY)
-        except FileNotFoundError:
-            print("ERROR: that file does not exist. TODO: Make this a messageBOX")
-        
-        self.notepad.delete("0.0", END)
-        
-        chunk = os.read(fd, 1024)
-        while chunk != b'':
-            self.notepad.insert(END, chunk)
-            chunk = os.read(fd, 1024)
-        
-        os.close(fd)
-    
     
     def notepad_clear(self):
-        #save_notepad()
         self.notepad.delete("0.0", END)
+        
+        
+    def notepad_disable(self):
+        self.notepad.config(cursor="arrow")
+        self.notepad.config(bg="#F0F0F0")
+        self.notepad.config(state=DISABLED)
+        
     
-    
-    def notepad_save(self):
+    def notepad_enable(self):
+        self.notepad.config(cursor="xterm")
+        self.notepad.config(bg="#ffffff")
+        self.notepad.config(state=NORMAL)
+        
+        
+    def notepad_open(self, file):
         try:
-            fd = os.open("./userData/Categories/" + self.slctn_path['ctgry'] + "/" \
-                + self.slctn_path['file'], os.O_WRONLY|os.O_CREAT)
+            fd = open(self.ctgry_path + self.slctn_path['ctgry'] + "/" + file, "r")
+        except FileNotFoundError:
+            print("ERROR: that file does not exist. TODO: Make this a messageBOX")
+            return False
+        
+        self.notepad_enable()
+        
+        chunk = fd.read(1024)
+        while chunk != '':
+            self.notepad.insert(END, chunk)
+            chunk = fd.read(1024)
+        
+        fd.close()
+        
+        self.notepad.edit_modified(False)
+        
+        
+    def notepad_save(self):
+        if self.slctn_path['ctgry'] == None or self.slctn_path['file'] == None:
+            print("WARNING: slctn_path[] is not set. Nothing saved.")
+            return False
+            
+        elif self.slctn_path['file'] == '':
+            print("WARNING: No file path set/selected. Nothing saved.")
+            return False
+        
+        elif not self.notepad.edit_modified():
+            return False
+            
+            
+        try:
+            fd = open(self.ctgry_path + self.slctn_path['ctgry'] + "/" \
+                + self.slctn_path['file'], "w")
         except FileNotFoundError:
             print("ERROR: A weird one.")
-            
+
         # TODO: Make this section write through chunks from notepad
-        blob = self.notepad.get("0.0", END).encode()
-        os.write(fd, blob)
+        blob = self.notepad.get("0.0", END)
+        fd.write(blob)
+        fd.close()
         
-        os.close(fd)
+        self.notepad.edit_modified(False)
+        

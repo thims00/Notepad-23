@@ -6,3 +6,17 @@
 Keybindings:
 - Vim style keybindings for navigation
 	- With modifiers for word, sentence skipping.
+- Shortcuts to allow for quickly and easily jumping through the category files and quite possibly the categories.
+	EG.
+	- Cycle through categories previous|next
+	- Jump around category files, Cntl-3 opens the 3rd file, etc.
+
+TextGrid Structure Insertion:
+	- Create a format that allows you to list data in a manner, click gridify, and the data
+	is formatted into a character table for clean, tidy display. 
+		- EG. -23,Some Data,category,id
+		      -29,other data,yrogetac,id
+		      -35,more data yet, bored, id
+
+		(Hilight the data, edit|insert, and "columnize". The data is then structured 
+		into character based, excel like table, in place.)
