@@ -1,3 +1,12 @@
+#!/usr/bin/env python3
+
+# PyPad - Python Organized ScratchPad for scientific purposes
+#
+# v0.0.1 Beta
+# Date: 8-19-2023
+# Author: Tom Smith (Thomas DOT Briggs DOT Smith AT Gmail DOT com)
+
+
 import os
 from os import path
 from tkinter import *
@@ -10,10 +19,11 @@ from tkinter import messagebox
 class PyPadGUI():
     ctgry_path = "./userData/Categories/"
     slctn_path = {'ctgry' : None, 'file' : None}
-    
-    
-    
-    
+
+
+    '''
+    Local GUI __init__
+    '''
     def __init__(self):
         self.__GUI__()
         self.__file_menu__()
@@ -21,7 +31,8 @@ class PyPadGUI():
         self.__categories__()
         self.__files__()
         self.__notepad__()
-    
+        self.__event_handler__()
+
 
     '''
     Local GUI Methods
@@ -34,8 +45,14 @@ class PyPadGUI():
         self.root.columnconfigure(1, weight=200)
 
         self.root.rowconfigure(0, weight=1)
-    
-    
+
+
+    def __event_handler__(self):
+        # Navigation pane events
+        self.ctgry_list.bind('<Double-1>', self.category_dblClick_event)
+        self.file_list.bind('<Double-1>', self.file_dblClick_event)
+
+
     def __file_menu__(self):
         ### File Bar
         self.menubar = Menu(self.root)
@@ -60,16 +77,16 @@ class PyPadGUI():
         
         # Stack our config
         self.root.config(menu=self.menubar)
-    
-    
+
+
     def __ui_frames__(self):
         self.left_frame = Frame(self.root)
         self.left_frame.pack(side="left", fill="y")
 
         self.right_frame = Frame(self.root)
         self.right_frame.pack(side="right", fill="both", expand=1)
-    
-    
+
+
     def __categories__(self):
         # Category Buttons
         self.cat_btn_frame = Frame(self.left_frame)
@@ -93,7 +110,7 @@ class PyPadGUI():
         self.cat_scrllbr.pack(side=RIGHT, fill=Y)
 
         self.ctgry_list = Listbox(self.ctgry_list_frame)#, yscrollcommand=cat_scrllbr.set)
-        
+
         # Populate categories by directory structure
         if path.isdir(self.ctgry_path):
             categories = os.listdir(self.ctgry_path)
@@ -104,9 +121,8 @@ class PyPadGUI():
         n = 0
         for categ in categories:
             self.ctgry_list.insert(n, categ)
-            self.ctgry_list.bind('<Double-1>', self.category_dblClick_event)
             n += 1
-            
+
         self.ctgry_list.pack(side="top")
 
 
@@ -131,38 +147,38 @@ class PyPadGUI():
 
     def mainloop(self):
         self.root.mainloop()
-        
-        
+
+
     '''
     Public GUI Events
     '''
     def category_dblClick_event(self, event):
         self.notepad_change()
-    
+
         lbox = self.ctgry_list.curselection()[0]
         selctn = self.ctgry_list.get(lbox)
         self.slctn_path['ctgry'] = selctn
         self.slctn_path['file'] = ''
-        
+
         # Clear the filename listbox
         self.file_list.delete(0, END)
-        
+
         # Get our files from userData
         files = self.files_get(selctn)
-        
+
         # Update our file listbox
-        
+
         for file in files:
             self.file_list.insert(END, file)
-            self.file_list.bind('<Double-1>', self.file_dblClick_event)
+            #self.file_list.bind('<Double-1>', self.file_dblClick_event)
 
         self.notepad_disable()
-        
+
 
     def file_dblClick_event(self, event):
         if self.slctn_path['file'] != '':
             self.notepad_save()
-            
+
         indx = self.file_list.curselection()[0]
         read_file = self.file_list.get(indx)
         self.slctn_path['file'] = read_file
@@ -178,14 +194,14 @@ class PyPadGUI():
         ctg_win = Toplevel(root)
         ctg_win.geometry("200x200")
         ctg_win.title("Child Window")
-        
+
         lbl = Label(ctg_win, text="Label:")
         lbl.pack(side="left")
-        
+
         add_categ_var = ""
         entry = Entry(ctg_win, textvariable=add_categ_var)
         entry.pack(side="right")
-        
+
         btn = Button(ctg_win, text="Ok", command=ctg_win.destroy)
         btn.pack(side="bottom")
 
@@ -198,7 +214,7 @@ class PyPadGUI():
 
         for file in os.listdir(self.ctgry_path + self.slctn_path['ctgry']):
             files.append(file)
-                
+
         return files
 
 
@@ -209,24 +225,24 @@ class PyPadGUI():
         self.notepad_save()
         self.notepad_clear()
         self.notepad.edit_modified(False)
-        
-    
+
+
     def notepad_clear(self):
         self.notepad.delete("0.0", END)
-        
-        
+
+
     def notepad_disable(self):
         self.notepad.config(cursor="arrow")
         self.notepad.config(bg="#F0F0F0")
         self.notepad.config(state=DISABLED)
-        
-    
+
+
     def notepad_enable(self):
         self.notepad.config(cursor="xterm")
         self.notepad.config(bg="#ffffff")
         self.notepad.config(state=NORMAL)
-        
-        
+
+
     def notepad_open(self, file):
         try:
             fd = open(self.ctgry_path + self.slctn_path['ctgry'] + "/" + file, "r")
@@ -244,8 +260,8 @@ class PyPadGUI():
         fd.close()
         
         self.notepad.edit_modified(False)
-        
-        
+
+
     def notepad_save(self):
         if self.slctn_path['ctgry'] == None or self.slctn_path['file'] == None:
             print("WARNING: slctn_path[] is not set. Nothing saved.")
@@ -271,4 +287,10 @@ class PyPadGUI():
         fd.close()
         
         self.notepad.edit_modified(False)
-        
+
+
+
+
+# Main loop()
+GUI = PyPadGUI()
+GUI.mainloop()

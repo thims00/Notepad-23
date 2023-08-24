@@ -1,15 +1,19 @@
 - Archive feature to allow easily backing up to a flat file, directory, or zip,gzip,bzip, etc.
 - Export feature for dropping specific files to pastebin
 - Github export
-
+- Show an indicator in the statusbar when notepad is 80 chars wide. Possibly even flash something at this axis.
 
 Keybindings:
 - Vim style keybindings for navigation
 	- With modifiers for word, sentence skipping.
+		- This should be fairly complete as to allow full navigation by nothing more than keyboard shortcuts. dwm style.
 - Shortcuts to allow for quickly and easily jumping through the category files and quite possibly the categories.
 	EG.
 	- Cycle through categories previous|next
 	- Jump around category files, Cntl-3 opens the 3rd file, etc.
+
+	- Ctrl-c for exit?
+	- Make some of the questionable shortcuts controllable in settings
 
 TextGrid Structure Insertion:
 	- Create a format that allows you to list data in a manner, click gridify, and the data
