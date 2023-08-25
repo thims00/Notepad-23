@@ -9,7 +9,7 @@
 
 import os
 from os import path
-from tkinter import *
+import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
 
@@ -34,11 +34,11 @@ class PyPadGUI():
         self.__event_handler__()
 
 
-    '''
+    ''' 
     Local GUI Methods
     '''
     def __GUI__(self):
-        self.root = Tk()
+        self.root = tk.Tk()
         self.root.geometry("777x575")
         self.root.minsize(777, 575)
         self.root.columnconfigure(0, weight=1)
@@ -55,10 +55,10 @@ class PyPadGUI():
 
     def __file_menu__(self):
         ### File Bar
-        self.menubar = Menu(self.root)
+        self.menubar = tk.Menu(self.root)
 
         # File
-        self.filemenu = Menu(self.menubar, tearoff=0)
+        self.filemenu = tk.Menu(self.menubar, tearoff=0)
         self.filemenu.add_command(label="Open", command="")
         self.filemenu.add_command(label="Save", command="") #save_notepad)
         self.filemenu.add_command(label="Close", command="")
@@ -68,7 +68,7 @@ class PyPadGUI():
 
 
         # Help
-        self.helpmenu = Menu(self.menubar, tearoff=0)
+        self.helpmenu = tk.Menu(self.menubar, tearoff=0)
         self.helpmenu.add_command(label="User Manual", command="")
         self.helpmenu.add_command(label="Website", command="")
         self.helpmenu.add_separator()
@@ -80,36 +80,36 @@ class PyPadGUI():
 
 
     def __ui_frames__(self):
-        self.left_frame = Frame(self.root)
+        self.left_frame = tk.Frame(self.root)
         self.left_frame.pack(side="left", fill="y")
 
-        self.right_frame = Frame(self.root)
+        self.right_frame = tk.Frame(self.root)
         self.right_frame.pack(side="right", fill="both", expand=1)
 
 
     def __categories__(self):
         # Category Buttons
-        self.cat_btn_frame = Frame(self.left_frame)
+        self.cat_btn_frame = tk.Frame(self.left_frame)
         self.cat_btn_frame.pack(side="top")
 
-        self.cat_add = Button(self.cat_btn_frame, text="Add", command="") #add_categ)
+        self.cat_add = tk.Button(self.cat_btn_frame, text="Add", command="") #add_categ)
         self.cat_add.pack(side="left")
 
-        self.cat_edit = Button(self.cat_btn_frame, text="Edit", command="")
+        self.cat_edit = tk.Button(self.cat_btn_frame, text="Edit", command="")
         self.cat_edit.pack(side="left")
 
-        self.cat_del = Button(self.cat_btn_frame, text="Delete", command="")
+        self.cat_del = tk.Button(self.cat_btn_frame, text="Delete", command="")
         self.cat_del.pack(side="left")
 
 
         # Categories Listview
-        self.ctgry_list_frame = Frame(self.left_frame)
+        self.ctgry_list_frame = tk.Frame(self.left_frame)
         self.ctgry_list_frame.pack(side="top")
 
-        self.cat_scrllbr = Scrollbar(self.ctgry_list_frame)
-        self.cat_scrllbr.pack(side=RIGHT, fill=Y)
+        self.cat_scrllbr = tk.Scrollbar(self.ctgry_list_frame)
+        self.cat_scrllbr.pack(side="right", fill="y")
 
-        self.ctgry_list = Listbox(self.ctgry_list_frame)#, yscrollcommand=cat_scrllbr.set)
+        self.ctgry_list = tk.Listbox(self.ctgry_list_frame)#, yscrollcommand=cat_scrllbr.set)
 
         # Populate categories by directory structure
         if path.isdir(self.ctgry_path):
@@ -128,19 +128,19 @@ class PyPadGUI():
 
     def __files__(self):
         # File listview
-        self.file_list_frame = Frame(self.left_frame)
+        self.file_list_frame = tk.Frame(self.left_frame)
         self.file_list_frame.pack(side="top")
 
-        self.file_scrllbr = Scrollbar(self.file_list_frame)
-        self.file_scrllbr.pack(side=RIGHT, fill=Y)
+        self.file_scrllbr = tk.Scrollbar(self.file_list_frame)
+        self.file_scrllbr.pack(side="right", fill="y")
 
-        self.file_list = Listbox(self.file_list_frame)#, yscrollcommand=self.file_scrllbr.set)
+        self.file_list = tk.Listbox(self.file_list_frame)#, yscrollcommand=self.file_scrllbr.set)
         self.file_list.pack(side="top")
 
 
     def __notepad__(self):
         # Notepad Window
-        self.notepad = Text(self.right_frame)
+        self.notepad = tk.Text(self.right_frame)
         self.notepad_disable()
         self.notepad.pack(side="right", fill="both", expand=1)
 
@@ -161,7 +161,7 @@ class PyPadGUI():
         self.slctn_path['file'] = ''
 
         # Clear the filename listbox
-        self.file_list.delete(0, END)
+        self.file_list.delete(0, "end")
 
         # Get our files from userData
         files = self.files_get(selctn)
@@ -169,7 +169,7 @@ class PyPadGUI():
         # Update our file listbox
 
         for file in files:
-            self.file_list.insert(END, file)
+            self.file_list.insert("end", file)
             #self.file_list.bind('<Double-1>', self.file_dblClick_event)
 
         self.notepad_disable()
@@ -191,7 +191,7 @@ class PyPadGUI():
     Public Category Methods
     '''
     def category_add(self):
-        ctg_win = Toplevel(root)
+        ctg_win = tk.Toplevel(root)
         ctg_win.geometry("200x200")
         ctg_win.title("Child Window")
 
@@ -228,19 +228,19 @@ class PyPadGUI():
 
 
     def notepad_clear(self):
-        self.notepad.delete("0.0", END)
+        self.notepad.delete("0.0", "end")
 
 
     def notepad_disable(self):
         self.notepad.config(cursor="arrow")
         self.notepad.config(bg="#F0F0F0")
-        self.notepad.config(state=DISABLED)
+        self.notepad.config(state="disabled")
 
 
     def notepad_enable(self):
         self.notepad.config(cursor="xterm")
         self.notepad.config(bg="#ffffff")
-        self.notepad.config(state=NORMAL)
+        self.notepad.config(state="normal")
 
 
     def notepad_open(self, file):
@@ -254,7 +254,7 @@ class PyPadGUI():
         
         chunk = fd.read(1024)
         while chunk != '':
-            self.notepad.insert(END, chunk)
+            self.notepad.insert("end", chunk)
             chunk = fd.read(1024)
         
         fd.close()
@@ -282,7 +282,7 @@ class PyPadGUI():
             print("ERROR: A weird one.")
 
         # TODO: Make this section write through chunks from notepad
-        blob = self.notepad.get("0.0", END)
+        blob = self.notepad.get("0.0", "end")
         fd.write(blob)
         fd.close()
         
