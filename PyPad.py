@@ -21,9 +21,7 @@ class PyPadGUI():
     slctn_path = {'ctgry' : None, 'file' : None}
 
 
-    '''
-    Local GUI __init__
-    '''
+    '''Local GUI __init__'''
     def __init__(self):
         self.__GUI__()
         self.__file_menu__()
@@ -34,9 +32,7 @@ class PyPadGUI():
         self.__event_handler__()
 
 
-    ''' 
-    Local GUI Methods
-    '''
+    ''' Local GUI Methods'''
     def __GUI__(self):
         self.root = tk.Tk()
         self.root.geometry("777x575")
@@ -149,9 +145,7 @@ class PyPadGUI():
         self.root.mainloop()
 
 
-    '''
-    Public GUI Events
-    '''
+    '''Public GUI Events'''
     def category_dblClick_event(self, event):
         self.notepad_change()
 
@@ -187,9 +181,7 @@ class PyPadGUI():
         self.notepad_open(self.slctn_path['file'])
 
 
-    '''
-    Public Category Methods
-    '''
+    '''Public Category Methods'''
     def category_add(self):
         ctg_win = tk.Toplevel(root)
         ctg_win.geometry("200x200")
@@ -206,9 +198,7 @@ class PyPadGUI():
         btn.pack(side="bottom")
 
 
-    ''' 
-    Public Files Methods
-    '''
+    ''' Public Files Methods'''
     def files_get(self, event):
         files = []
 
@@ -218,9 +208,7 @@ class PyPadGUI():
         return files
 
 
-    '''
-    Public Notepad Methods
-    '''
+    '''Public Notepad Methods'''
     def notepad_change(self):
         self.notepad_save()
         self.notepad_clear()
