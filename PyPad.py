@@ -88,7 +88,7 @@ class PyPadGUI():
         self.cat_btn_frame = tk.Frame(self.left_frame)
         self.cat_btn_frame.pack(side="top")
 
-        self.cat_add = tk.Button(self.cat_btn_frame, text="Add", command="") #add_categ)
+        self.cat_add = tk.Button(self.cat_btn_frame, text="Add", command=self.category_add) #add_categ)
         self.cat_add.pack(side="left")
 
         self.cat_edit = tk.Button(self.cat_btn_frame, text="Edit", command="")
@@ -183,19 +183,29 @@ class PyPadGUI():
 
     '''Public Category Methods'''
     def category_add(self):
-        ctg_win = tk.Toplevel(root)
-        ctg_win.geometry("200x200")
-        ctg_win.title("Child Window")
+        self.ctg_win = tk.Toplevel(self.root)
+        self.ctg_win.geometry("200x200")
+        self.ctg_win.title("Child Window")
 
-        lbl = Label(ctg_win, text="Label:")
+        lbl = tk.Label(self.ctg_win, text="Label:")
         lbl.pack(side="left")
 
-        add_categ_var = ""
-        entry = Entry(ctg_win, textvariable=add_categ_var)
-        entry.pack(side="right")
+        self.add_categ_var = ""
+        self.entry = tk.Entry(self.ctg_win, textvariable=self.add_categ_var)
+        self.entry.pack(side="right")
 
-        btn = Button(ctg_win, text="Ok", command=ctg_win.destroy)
-        btn.pack(side="bottom")
+        self.btn = tk.Button(self.ctg_win, text="Ok", command=self.ctg_win.destroy)
+        self.btn.pack(side="bottom")
+        
+        print(self.add_categ_var)
+
+
+    def category_edit(self):
+        return None
+
+
+    def category_delete(self):
+        return None
 
 
     ''' Public Files Methods'''
