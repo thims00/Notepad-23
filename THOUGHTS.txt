@@ -1,0 +1,2 @@
+- EditableListbox
+	- What should an editable item input do when you click another element during editing? Accept? Cancel? and/or message?

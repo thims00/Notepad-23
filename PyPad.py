@@ -16,6 +16,45 @@ from tkinter import messagebox
 
 
 
+class EditableListbox(tk.Listbox):
+    """A listbox where you can directly edit an item via double-click
+    
+    SEE: https://stackoverflow.com/questions/64609658/python-tkinter-listbox-text-edit-in-gui"""
+    def __init__(self, master, **kwargs):
+        super().__init__(master, **kwargs)
+        self.edit_item = None
+        self.bind("<Double-1>", self._start_edit)
+
+    def _start_edit(self, event):
+        index = self.index(f"@{event.x},{event.y}")
+        self.start_edit(index)
+        return "break"
+
+    def start_edit(self, index, accept_func=None,cancel_func=None):
+        self.edit_item = index
+        text = self.get(index)
+        y0 = self.bbox(index)[1]
+        entry = tk.Entry(self, borderwidth=0, highlightthickness=1)
+        entry.bind("<Return>", self.accept_edit)
+        entry.bind("<Escape>", self.cancel_edit)
+
+        entry.insert(0, text)
+        entry.selection_from(0)
+        entry.selection_to("end")
+        entry.place(relx=0, y=y0, relwidth=1, width=-1)
+        entry.focus_set()
+        entry.grab_set()
+
+    def cancel_edit(self, event):
+        event.widget.destroy()
+
+    def accept_edit(self, event):
+        new_data = event.widget.get()
+        self.delete(self.edit_item)
+        self.insert(self.edit_item, new_data)
+        event.widget.destroy()
+
+
 class PyPadGUI():
     ctgry_path = "./userData/Categories/"
     slctn_path = {'ctgry' : None, 'file' : None}
@@ -46,6 +85,7 @@ class PyPadGUI():
     def __event_handler__(self):
         # Navigation pane events
         self.ctgry_list.bind('<Double-1>', self.category_dblClick_event)
+        
         self.file_list.bind('<Double-1>', self.file_dblClick_event)
 
 
@@ -91,7 +131,7 @@ class PyPadGUI():
         self.cat_add = tk.Button(self.cat_btn_frame, text="Add", command=self.category_add) #add_categ)
         self.cat_add.pack(side="left")
 
-        self.cat_edit = tk.Button(self.cat_btn_frame, text="Edit", command="")
+        self.cat_edit = tk.Button(self.cat_btn_frame, text="Edit", command=self.category_edit)
         self.cat_edit.pack(side="left")
 
         self.cat_del = tk.Button(self.cat_btn_frame, text="Delete", command="")
@@ -105,7 +145,7 @@ class PyPadGUI():
         self.cat_scrllbr = tk.Scrollbar(self.ctgry_list_frame)
         self.cat_scrllbr.pack(side="right", fill="y")
 
-        self.ctgry_list = tk.Listbox(self.ctgry_list_frame)#, yscrollcommand=cat_scrllbr.set)
+        self.ctgry_list = EditableListbox(self.ctgry_list_frame)#, yscrollcommand=cat_scrllbr.set)
 
         # Populate categories by directory structure
         if path.isdir(self.ctgry_path):
@@ -114,10 +154,9 @@ class PyPadGUI():
         else:
             print("ERROR: ", self.ctgry_path, ": does not exist.")
             os.exit(1)
-        n = 0
+
         for categ in categories:
-            self.ctgry_list.insert(n, categ)
-            n += 1
+            self.ctgry_list.insert("end", categ)
 
         self.ctgry_list.pack(side="top")
 
@@ -201,11 +240,15 @@ class PyPadGUI():
 
 
     def category_edit(self):
-        return None
+        if self.slctn_path['ctgry'] != None:
+            print("category_edit()")
+            indx = self.ctgry_list.curselection()
+            print(indx)
+            self.ctgry_list.start_edit(indx)
 
 
     def category_delete(self):
-        return None
+        pass
 
 
     ''' Public Files Methods'''
