@@ -14,11 +14,9 @@ from tkinter import ttk
 from tkinter import messagebox
 
 
-
-
 class EditableListbox(tk.Listbox):
     """A listbox where you can directly edit an item via double-click
-    
+
     SEE: https://stackoverflow.com/questions/64609658/python-tkinter-listbox-text-edit-in-gui"""
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
@@ -60,7 +58,7 @@ class PyPadGUI():
     slctn_path = {'ctgry' : None, 'file' : None}
 
 
-    '''Local GUI __init__'''
+    ''' Local GUI __init__'''
     def __init__(self):
         self.__GUI__()
         self.__file_menu__()
@@ -86,8 +84,9 @@ class PyPadGUI():
         # Navigation pane events
         self.ctgry_list.bind('<Double-1>', self.category_dblClick_event)
         
-        self.file_list.bind('<Double-1>', self.file_dblClick_event)
-
+        self.file_list.bind('<ButtonRelease-1>', self.file_click_event, add="+")
+        print(self.file_list.bindtags())
+        #self.file_list.bindtags(('.!frame.!frame3.!listbox', 'Listbox', '.', 'all'))
 
     def __file_menu__(self):
         ### File Bar
@@ -169,7 +168,7 @@ class PyPadGUI():
         self.file_scrllbr = tk.Scrollbar(self.file_list_frame)
         self.file_scrllbr.pack(side="right", fill="y")
 
-        self.file_list = tk.Listbox(self.file_list_frame)#, yscrollcommand=self.file_scrllbr.set)
+        self.file_list = EditableListbox(self.file_list_frame)#, yscrollcommand=self.file_scrllbr.set)
         self.file_list.pack(side="top")
 
 
@@ -180,11 +179,7 @@ class PyPadGUI():
         self.notepad.pack(side="right", fill="both", expand=1)
 
 
-    def mainloop(self):
-        self.root.mainloop()
-
-
-    '''Public GUI Events'''
+    ''' Public GUI Events'''
     def category_dblClick_event(self, event):
         self.notepad_change()
 
@@ -208,10 +203,12 @@ class PyPadGUI():
         self.notepad_disable()
 
 
-    def file_dblClick_event(self, event):
+    def file_click_event(self, event):
+        print("file_click_event: Callback.")
         if self.slctn_path['file'] != '':
             self.notepad_save()
-
+        
+        print(self.file_list.curselection())
         indx = self.file_list.curselection()[0]
         read_file = self.file_list.get(indx)
         self.slctn_path['file'] = read_file
@@ -220,7 +217,7 @@ class PyPadGUI():
         self.notepad_open(self.slctn_path['file'])
 
 
-    '''Public Category Methods'''
+    ''' Public Category Methods'''
     def category_add(self):
         self.ctg_win = tk.Toplevel(self.root)
         self.ctg_win.geometry("200x200")
@@ -251,6 +248,10 @@ class PyPadGUI():
         pass
 
 
+    def category_rename(self):
+        pass
+
+
     ''' Public Files Methods'''
     def files_get(self, event):
         files = []
@@ -261,7 +262,7 @@ class PyPadGUI():
         return files
 
 
-    '''Public Notepad Methods'''
+    ''' Public Notepad Methods'''
     def notepad_change(self):
         self.notepad_save()
         self.notepad_clear()
@@ -330,6 +331,8 @@ class PyPadGUI():
         self.notepad.edit_modified(False)
 
 
+    def mainloop(self):
+        self.root.mainloop()
 
 
 # Main loop()
