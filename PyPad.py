@@ -11,7 +11,7 @@ import os
 from os import path
 import tkinter as tk
 from tkinter import ttk
-from tkinter import messagebox
+import tkinter.messagebox as mb
 
 
 class EditableListbox(tk.Listbox):
@@ -21,7 +21,7 @@ class EditableListbox(tk.Listbox):
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
         self.edit_item = None
-        self.bind("<Double-1>", self._start_edit)
+        #self.bind("<Double-1>", self._start_edit)
 
     def _start_edit(self, event):
         index = self.index(f"@{event.x},{event.y}")
@@ -29,6 +29,9 @@ class EditableListbox(tk.Listbox):
         return "break"
 
     def start_edit(self, index, accept_func=None,cancel_func=None):
+        if self.bbox(index) == None:
+            self.see(index)
+
         self.edit_item = index
         text = self.get(index)
         y0 = self.bbox(index)[1]
@@ -63,6 +66,7 @@ class PyPadGUI():
         self.__GUI__()
         self.__file_menu__()
         self.__ui_frames__()
+        self.__ui_buttons__()
         self.__categories__()
         self.__files__()
         self.__notepad__()
@@ -82,11 +86,9 @@ class PyPadGUI():
 
     def __event_handler__(self):
         # Navigation pane events
-        self.ctgry_list.bind('<Double-1>', self.category_dblClick_event)
-        
+        self.ctgry_list.bind('<Double-1>', self.category_dblClick_event, add="+")
         self.file_list.bind('<ButtonRelease-1>', self.file_click_event, add="+")
-        print(self.file_list.bindtags())
-        #self.file_list.bindtags(('.!frame.!frame3.!listbox', 'Listbox', '.', 'all'))
+
 
     def __file_menu__(self):
         ### File Bar
@@ -122,21 +124,21 @@ class PyPadGUI():
         self.right_frame.pack(side="right", fill="both", expand=1)
 
 
+    def __ui_buttons__(self):
+        self.ui_btn_frame = tk.Frame(self.left_frame)
+        self.ui_btn_frame.pack(side="top")
+
+        self.ui_add = tk.Button(self.ui_btn_frame, text="Add", command=self.listbox_add_event)
+        self.ui_add.pack(side="left")
+
+        self.ui_edit = tk.Button(self.ui_btn_frame, text="Edit", command=self.listbox_edit_event)
+        self.ui_edit.pack(side="left")
+
+        self.ui_delete = tk.Button(self.ui_btn_frame, text="Delete", command=self.listbox_delete_event)
+        self.ui_delete.pack(side="left")    
+
+
     def __categories__(self):
-        # Category Buttons
-        self.cat_btn_frame = tk.Frame(self.left_frame)
-        self.cat_btn_frame.pack(side="top")
-
-        self.cat_add = tk.Button(self.cat_btn_frame, text="Add", command=self.category_add) #add_categ)
-        self.cat_add.pack(side="left")
-
-        self.cat_edit = tk.Button(self.cat_btn_frame, text="Edit", command=self.category_edit)
-        self.cat_edit.pack(side="left")
-
-        self.cat_del = tk.Button(self.cat_btn_frame, text="Delete", command="")
-        self.cat_del.pack(side="left")
-
-
         # Categories Listview
         self.ctgry_list_frame = tk.Frame(self.left_frame)
         self.ctgry_list_frame.pack(side="top")
@@ -179,7 +181,11 @@ class PyPadGUI():
         self.notepad.pack(side="right", fill="both", expand=1)
 
 
-    ''' Public GUI Events'''
+    def __statusbar__(self):
+        pass
+
+
+    ''' Public Event Handling Methods'''
     def category_dblClick_event(self, event):
         self.notepad_change()
 
@@ -198,17 +204,14 @@ class PyPadGUI():
 
         for file in files:
             self.file_list.insert("end", file)
-            #self.file_list.bind('<Double-1>', self.file_dblClick_event)
 
         self.notepad_disable()
 
 
     def file_click_event(self, event):
-        print("file_click_event: Callback.")
         if self.slctn_path['file'] != '':
             self.notepad_save()
         
-        print(self.file_list.curselection())
         indx = self.file_list.curselection()[0]
         read_file = self.file_list.get(indx)
         self.slctn_path['file'] = read_file
@@ -217,26 +220,47 @@ class PyPadGUI():
         self.notepad_open(self.slctn_path['file'])
 
 
-    ''' Public Category Methods'''
-    def category_add(self):
-        self.ctg_win = tk.Toplevel(self.root)
-        self.ctg_win.geometry("200x200")
-        self.ctg_win.title("Child Window")
-
-        lbl = tk.Label(self.ctg_win, text="Label:")
-        lbl.pack(side="left")
-
-        self.add_categ_var = ""
-        self.entry = tk.Entry(self.ctg_win, textvariable=self.add_categ_var)
-        self.entry.pack(side="right")
-
-        self.btn = tk.Button(self.ctg_win, text="Ok", command=self.ctg_win.destroy)
-        self.btn.pack(side="bottom")
+    def listbox_add_event(self):
+        self._listbox_handle("add")
         
-        print(self.add_categ_var)
+    def listbox_edit_event(self):
+        self._listbox_handle("edit")
+        
+    def listbox_delete_event(self):
+        self._listbox_handle("del")
+    
+    
+    def _listbox_handle(self, func=None):
+        self.lb_widget = self.root.focus_get()
+
+        try:
+            indx = self.lb_widget.curselection()[0]
+        except IndexError:
+            mb.showwarning("No List Selected", "A list must be selected to apply a function.")
+            return False
 
 
-    def category_edit(self):
+        if func == "add":
+            self.lb_widget.insert("end", "New Item")
+            indx = self.lb_widget.size() - 1
+            #self.lb_widget.see(indx)
+            slctn = self.lb_widget.curselection()[0]
+            #lb_widget.select_clear(slctn)
+            self.lb_widget.start_edit(indx)
+            
+
+        elif func == "edit":
+            self.lb_widget.start_edit(indx)
+
+        elif func == "del":
+            pass
+        else:
+            print("WARNING: _listbox_handle(): ", func, " unexpected argument.")
+            return None
+
+
+
+    def listbox_edit(self):
         if self.slctn_path['ctgry'] != None:
             print("category_edit()")
             indx = self.ctgry_list.curselection()
@@ -244,11 +268,7 @@ class PyPadGUI():
             self.ctgry_list.start_edit(indx)
 
 
-    def category_delete(self):
-        pass
-
-
-    def category_rename(self):
+    def listbox_delete(self):
         pass
 
 
