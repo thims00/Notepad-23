@@ -1,8 +1,10 @@
+- NAME: PyPid
 - Archive feature to allow easily backing up to a flat file, directory, or zip,gzip,bzip, etc.
 - Export feature for dropping specific files to pastebin
 - Github export
 - Show an indicator in the statusbar when notepad is 80 chars wide. Possibly even flash something at this axis.
 - PyPad.ppd - Specific files that act as databases for individualized parent categorizing. THis behavior can default to a folder for day-day useage, with the capability of opening a database for itemized categorizing.
+- Individual file export
 
 Keybindings:
 - Vim style keybindings for navigation

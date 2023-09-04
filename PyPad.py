@@ -8,27 +8,120 @@
 
 
 import os
-from os import path
+import os.path
 import tkinter as tk
 from tkinter import ttk
 import tkinter.messagebox as mb
 
 
+basepath = r'C:\Users\rootp\Documents\Code\Python\GUI\PyPad'
+datapath = r'userData\Categories'
+
+
+class FileOps():
+    def __init__(self, base_path=None, data_path=None):
+        if base_path:
+            self.path = fr'{os.path.abspath(base_path)}'
+        else:
+            self.path = fr'{os.getcwd()}'
+            
+        if data_path:
+            self.path = fr'{self.path}\{data_path}'
+            
+        
+        if not os.path.exists(self.path):
+            raise FileNotFoundError(self.path, " non-existent")
+
+    def is_file(self, file):
+        if isinstance(file, list):
+            for x in file:
+                ret = os.path.isfile(fr'{self.path}\{file}')
+                
+                if not ret:
+                    return False
+                    
+        else:
+            ret = os.path.isfile(fr'{self.path}\{file}')
+            
+        return ret
+
+    def is_dir(self, file):
+        if isinstance(file, list):
+            for x in file:
+                ret = os.path.isdir(fr'{self.path}\{file}')
+                
+                if not ret:
+                    return False
+                    
+        else:
+            ret = os.path.isdir(fr'{self.path}\{file}')
+            
+        return ret
+
+    def is_rw(self, file):
+        if isinstance(file, list):
+            for x in file:
+                ret = os.access(fr'{self.path}{file}', os.R_OK & os.W_OK)
+                
+                if not ret:
+                    return False
+                    
+        else:
+            ret = os.access(fr'{self.path}\{file}', os.R_OK & os.W_OK)
+            
+        return ret
+
+    def touch(self, file):
+        if self.is_file(file):
+            print(fr'WARNING: Could not create file "{self.path}\{file}". File exists.')
+            return False
+
+        fd = open(fr'{self.path}\{file}', "x")
+        fd.close()
+
+        return True
+        
+    def mkdir(self, file):
+        if self.is_dir(file):
+            print(fr'ALERT: Did not create directory: "{self.path}\{file}". Directory exists.')
+            return False
+        else:
+            os.mkdir(fr'{self.path}\{file}')
+        
+        return True
+
+    def rename(self, old, new):
+            os.rename(fr'{self.path}\{old}', fr'{self.path}\{new}')
+
+    def delete(self, file):
+        if self.is_file(file):
+            os.remove(fr'{self.path}\{file}')
+        elif self.is_dir(file):
+            os.rmdir(fr'{self.path}\{file}')
+        else:
+            raise Exception(fr'FileError: Unknown file operation error: "{self.path}\{file}')
+
+
 class EditableListbox(tk.Listbox):
     """A listbox where you can directly edit an item via double-click
-
-    SEE: https://stackoverflow.com/questions/64609658/python-tkinter-listbox-text-edit-in-gui"""
+        Source: https://stackoverflow.com/questions/64609658/python-tkinter-listbox-text-edit-in-gui"""
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
         self.edit_item = None
-        #self.bind("<Double-1>", self._start_edit)
+        self.entry_data = None
 
     def _start_edit(self, event):
+        self.entry_data = None
         index = self.index(f"@{event.x},{event.y}")
         self.start_edit(index)
         return "break"
 
     def start_edit(self, index, accept_func=None,cancel_func=None):
+        if accept_func:
+            self.accept_func = accept_func
+        if cancel_func:
+            self.cancel_func = cancel_func
+
         if self.bbox(index) == None:
             self.see(index)
 
@@ -49,19 +142,30 @@ class EditableListbox(tk.Listbox):
     def cancel_edit(self, event):
         event.widget.destroy()
 
+        if self.cancel_func:
+            self.cancel_func()
+
     def accept_edit(self, event):
         new_data = event.widget.get()
         self.delete(self.edit_item)
         self.insert(self.edit_item, new_data)
         event.widget.destroy()
+        
+        self.entry_data = new_data
+
+        if self.accept_func:
+            self.accept_func()
+
+    def edit_get(self):
+        return self.entry_data
 
 
 class PyPadGUI():
-    ctgry_path = "./userData/Categories/"
+    ctgry_path = r'userData/Categories'
     slctn_path = {'ctgry' : None, 'file' : None}
+    listbox_elem_type = None
 
 
-    ''' Local GUI __init__'''
     def __init__(self):
         self.__GUI__()
         self.__file_menu__()
@@ -73,7 +177,7 @@ class PyPadGUI():
         self.__event_handler__()
 
 
-    ''' Local GUI Methods'''
+    """ Local GUI Methods"""
     def __GUI__(self):
         self.root = tk.Tk()
         self.root.geometry("777x575")
@@ -83,12 +187,10 @@ class PyPadGUI():
 
         self.root.rowconfigure(0, weight=1)
 
-
     def __event_handler__(self):
         # Navigation pane events
         self.ctgry_list.bind('<Double-1>', self.category_dblClick_event, add="+")
         self.file_list.bind('<ButtonRelease-1>', self.file_click_event, add="+")
-
 
     def __file_menu__(self):
         ### File Bar
@@ -115,14 +217,12 @@ class PyPadGUI():
         # Stack our config
         self.root.config(menu=self.menubar)
 
-
     def __ui_frames__(self):
         self.left_frame = tk.Frame(self.root)
         self.left_frame.pack(side="left", fill="y")
 
         self.right_frame = tk.Frame(self.root)
         self.right_frame.pack(side="right", fill="both", expand=1)
-
 
     def __ui_buttons__(self):
         self.ui_btn_frame = tk.Frame(self.left_frame)
@@ -136,7 +236,6 @@ class PyPadGUI():
 
         self.ui_delete = tk.Button(self.ui_btn_frame, text="Delete", command=self.listbox_delete_event)
         self.ui_delete.pack(side="left")    
-
 
     def __categories__(self):
         # Categories Listview
@@ -160,7 +259,9 @@ class PyPadGUI():
             self.ctgry_list.insert("end", categ)
 
         self.ctgry_list.pack(side="top")
-
+        
+        # Local object listbox name identifier
+        self.ctgry_list.listbox_elem_type = "category"
 
     def __files__(self):
         # File listview
@@ -172,7 +273,9 @@ class PyPadGUI():
 
         self.file_list = EditableListbox(self.file_list_frame)#, yscrollcommand=self.file_scrllbr.set)
         self.file_list.pack(side="top")
-
+        
+        # Local object listbox name identifier
+        self.file_list.listbox_elem_type = "file"
 
     def __notepad__(self):
         # Notepad Window
@@ -180,12 +283,11 @@ class PyPadGUI():
         self.notepad_disable()
         self.notepad.pack(side="right", fill="both", expand=1)
 
-
     def __statusbar__(self):
         pass
 
 
-    ''' Public Event Handling Methods'''
+    """ Public Event Handling Methods"""
     def category_dblClick_event(self, event):
         self.notepad_change()
 
@@ -207,7 +309,6 @@ class PyPadGUI():
 
         self.notepad_disable()
 
-
     def file_click_event(self, event):
         if self.slctn_path['file'] != '':
             self.notepad_save()
@@ -220,16 +321,16 @@ class PyPadGUI():
         self.notepad_open(self.slctn_path['file'])
 
 
-    def listbox_add_event(self):
+    """ Public Listbox Methods"""
+    def listbox_add_event(self, event):
         self._listbox_handle("add")
         
-    def listbox_edit_event(self):
+    def listbox_edit_event(self, event):
         self._listbox_handle("edit")
         
-    def listbox_delete_event(self):
+    def listbox_delete_event(self, event):
         self._listbox_handle("del")
-    
-    
+
     def _listbox_handle(self, func=None):
         self.lb_widget = self.root.focus_get()
 
@@ -239,28 +340,56 @@ class PyPadGUI():
             mb.showwarning("No List Selected", "A list must be selected to apply a function.")
             return False
 
-
+        lb_elem_type = self.lb_widget.listbox_elem_type.lower()
+        
+        if not (lb_elem_type == "category" or lb_elem_type == "file"):
+            print("WARNING: _listbox_handle():: self.lb_widget.listbox_name:: ValueError: Undefined")
+            return None
+            
+        name = self.lb_widget.get()
+        
+        # Process UI event code and make respective handle calls
         if func == "add":
             self.lb_widget.insert("end", "New Item")
             indx = self.lb_widget.size() - 1
-            #self.lb_widget.see(indx)
-            slctn = self.lb_widget.curselection()[0]
-            #lb_widget.select_clear(slctn)
             self.lb_widget.start_edit(indx)
-            
+
+            self.listbox_file_add(lb_elem_type, name)
 
         elif func == "edit":
             self.lb_widget.start_edit(indx)
+            
+            self.listbox_file_edit(lb_elem_type, name)
 
         elif func == "del":
+            
+        
+            self.listbox_file_delete(lb_elem_type, name)
             pass
+
         else:
             print("WARNING: _listbox_handle(): ", func, " unexpected argument.")
             return None
 
 
+    """Listbox file functions - Add, Edit, Delete
+        listbox_*(ftype, name)
+            ftype - file type: (directory | file)
+            name - filesystem level, name of file
+    """
+    def listbox_file_add(self, ftype, file):
+        if ftype == "file":
+            
+            
+        elif ftype == "directory":
+        
+        
+        else:
+            print("ERROR:: listbox_file_add():: Unknown Error - AABBCC93829283")
+            return False
 
-    def listbox_edit(self):
+
+    def listbox_file_edit(self, ftype, name):
         if self.slctn_path['ctgry'] != None:
             print("category_edit()")
             indx = self.ctgry_list.curselection()
@@ -268,11 +397,11 @@ class PyPadGUI():
             self.ctgry_list.start_edit(indx)
 
 
-    def listbox_delete(self):
+    def listbox_file_delete(self, ftype, name):
         pass
 
 
-    ''' Public Files Methods'''
+    """ Public Files Methods"""
     def files_get(self, event):
         files = []
 
@@ -282,28 +411,24 @@ class PyPadGUI():
         return files
 
 
-    ''' Public Notepad Methods'''
+    """ Public Notepad Methods"""
     def notepad_change(self):
         self.notepad_save()
         self.notepad_clear()
         self.notepad.edit_modified(False)
 
-
     def notepad_clear(self):
         self.notepad.delete("0.0", "end")
-
 
     def notepad_disable(self):
         self.notepad.config(cursor="arrow")
         self.notepad.config(bg="#F0F0F0")
         self.notepad.config(state="disabled")
 
-
     def notepad_enable(self):
         self.notepad.config(cursor="xterm")
         self.notepad.config(bg="#ffffff")
         self.notepad.config(state="normal")
-
 
     def notepad_open(self, file):
         try:
@@ -322,7 +447,6 @@ class PyPadGUI():
         fd.close()
         
         self.notepad.edit_modified(False)
-
 
     def notepad_save(self):
         if self.slctn_path['ctgry'] == None or self.slctn_path['file'] == None:
@@ -350,11 +474,13 @@ class PyPadGUI():
         
         self.notepad.edit_modified(False)
 
-
     def mainloop(self):
         self.root.mainloop()
 
 
+
+
 # Main loop()
-GUI = PyPadGUI()
-GUI.mainloop()
+if __name__ == "__main__":
+    GUI = PyPadGUI()
+    GUI.mainloop()
