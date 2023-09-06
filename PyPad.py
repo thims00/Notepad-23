@@ -21,40 +21,42 @@ datapath = r'userData\Categories'
 class FileOps():
     def __init__(self, base_path=None, data_path=None):
         if base_path:
-            self.path = fr'{os.path.abspath(base_path)}'
+            self.path = fr'{os.path.abspath(base_path)}\\'
         else:
-            self.path = fr'{os.getcwd()}'
-            
+            self.path = fr'{os.getcwd()}\\'
+
         if data_path:
-            self.path = fr'{self.path}\{data_path}'
-            
-        
+            self.path = fr'{self.path}{data_path}\\'
+
         if not os.path.exists(self.path):
             raise FileNotFoundError(self.path, " non-existent")
+
+    def get_base(self):
+        pass
 
     def is_file(self, file):
         if isinstance(file, list):
             for x in file:
-                ret = os.path.isfile(fr'{self.path}\{file}')
+                ret = os.path.isfile(fr'{self.path}{file}')
                 
                 if not ret:
                     return False
                     
         else:
-            ret = os.path.isfile(fr'{self.path}\{file}')
+            ret = os.path.isfile(fr'{self.path}{file}')
             
         return ret
 
     def is_dir(self, file):
         if isinstance(file, list):
             for x in file:
-                ret = os.path.isdir(fr'{self.path}\{file}')
+                ret = os.path.isdir(fr'{self.path}{file}')
                 
                 if not ret:
                     return False
                     
         else:
-            ret = os.path.isdir(fr'{self.path}\{file}')
+            ret = os.path.isdir(fr'{self.path}{file}')
             
         return ret
 
@@ -67,39 +69,39 @@ class FileOps():
                     return False
                     
         else:
-            ret = os.access(fr'{self.path}\{file}', os.R_OK & os.W_OK)
+            ret = os.access(fr'{self.path}{file}', os.R_OK & os.W_OK)
             
         return ret
 
     def touch(self, file):
         if self.is_file(file):
-            print(fr'WARNING: Could not create file "{self.path}\{file}". File exists.')
+            print(fr'WARNING: Could not create file "{self.path}{file}". File exists.')
             return False
 
-        fd = open(fr'{self.path}\{file}', "x")
+        fd = open(fr'{self.path}{file}', "x")
         fd.close()
 
         return True
         
     def mkdir(self, file):
         if self.is_dir(file):
-            print(fr'ALERT: Did not create directory: "{self.path}\{file}". Directory exists.')
+            print(fr'ALERT: Did not create directory: "{self.path}{file}". Directory exists.')
             return False
         else:
-            os.mkdir(fr'{self.path}\{file}')
+            os.mkdir(fr'{self.path}{file}')
         
         return True
 
     def rename(self, old, new):
-            os.rename(fr'{self.path}\{old}', fr'{self.path}\{new}')
+            os.rename(fr'{self.path}{old}', fr'{self.path}{new}')
 
     def delete(self, file):
         if self.is_file(file):
-            os.remove(fr'{self.path}\{file}')
+            os.remove(fr'{self.path}{file}')
         elif self.is_dir(file):
-            os.rmdir(fr'{self.path}\{file}')
+            os.rmdir(fr'{self.path}{file}')
         else:
-            raise Exception(fr'FileError: Unknown file operation error: "{self.path}\{file}')
+            raise Exception(fr'FileError: Unknown file operation error: "{self.path}{file}')
 
 
 class EditableListbox(tk.Listbox):
@@ -109,55 +111,75 @@ class EditableListbox(tk.Listbox):
         super().__init__(master, **kwargs)
         self.edit_item = None
         self.entry_data = None
+        
+        # EditableListbox Data Object
+        class EditableListboxObj:
+            listbox_elem_type = None
+            old_data = None
+            new_data = None
+            
+        self.EdList = EditableListboxObj()
 
     def _start_edit(self, event):
-        self.entry_data = None
         index = self.index(f"@{event.x},{event.y}")
         self.start_edit(index)
         return "break"
 
     def start_edit(self, index, accept_func=None,cancel_func=None):
-        if accept_func:
-            self.accept_func = accept_func
-        if cancel_func:
-            self.cancel_func = cancel_func
+        print("start_edit():: line:: 128 BEGIN")
+        self.accept_func = accept_func
+        self.cancel_func = cancel_func
 
         if self.bbox(index) == None:
             self.see(index)
 
         self.edit_item = index
-        text = self.get(index)
+        self.EdList.old_data = self.get(index)
         y0 = self.bbox(index)[1]
         entry = tk.Entry(self, borderwidth=0, highlightthickness=1)
+        print("start_edit():: line:: 139")
         entry.bind("<Return>", self.accept_edit)
         entry.bind("<Escape>", self.cancel_edit)
+        print("start_edit():: line:: 142")
+        #bt = entry.bindtags()
+        #entry.bindtags((bt[1], bt[0], bt[2], bt[3]))
+        print(entry.bindtags())
 
-        entry.insert(0, text)
+        entry.insert(0, self.EdList.old_data)
         entry.selection_from(0)
         entry.selection_to("end")
         entry.place(relx=0, y=y0, relwidth=1, width=-1)
         entry.focus_set()
         entry.grab_set()
+        print("start_edit() END")
 
     def cancel_edit(self, event):
-        event.widget.destroy()
-
-        if self.cancel_func:
-            self.cancel_func()
-
-    def accept_edit(self, event):
-        new_data = event.widget.get()
-        self.delete(self.edit_item)
-        self.insert(self.edit_item, new_data)
+        print("cancel_edit():: line:: 156:: BEGIN")
+        self.EdList.new_data = None
+        print("cancel_edit():: line:: 158")
         event.widget.destroy()
         
-        self.entry_data = new_data
+        print("cancel_edit():: line:: 161")
+        if self.cancel_func:
+            print("cancel_edit():: line:: 163:: cancel_func() callback(PRE)")
+            self.cancel_func(self.EdList)
+            print("cancel_edit():: line:: 165:: cancel_func() callback(POST)")
+            
+        print("cancel_edit():: line:: END")
+
+    def accept_edit(self, event):
+        print("accept_edit():: line:: 168:: BEGIN")
+        self.EdList.new_data = event.widget.get()
+        self.delete(self.edit_item)
+        self.insert(self.edit_item, self.EdList.new_data)
+        event.widget.destroy()
+        
 
         if self.accept_func:
-            self.accept_func()
-
-    def edit_get(self):
-        return self.entry_data
+            print("accept_edit:: accept_func:: callback")
+            self.accept_func(self.EdList)
+            
+        print("accept_edit():: line:: END")
 
 
 class PyPadGUI():
@@ -167,6 +189,8 @@ class PyPadGUI():
 
 
     def __init__(self):
+        self.fo = FileOps(basepath, datapath)
+    
         self.__GUI__()
         self.__file_menu__()
         self.__ui_frames__()
@@ -248,20 +272,16 @@ class PyPadGUI():
         self.ctgry_list = EditableListbox(self.ctgry_list_frame)#, yscrollcommand=cat_scrllbr.set)
 
         # Populate categories by directory structure
-        if path.isdir(self.ctgry_path):
-            categories = os.listdir(self.ctgry_path)
-            categories.sort()
-        else:
-            print("ERROR: ", self.ctgry_path, ": does not exist.")
-            os.exit(1)
+        categories = os.listdir(self.ctgry_path)
+        categories.sort()
 
         for categ in categories:
             self.ctgry_list.insert("end", categ)
 
         self.ctgry_list.pack(side="top")
-        
-        # Local object listbox name identifier
-        self.ctgry_list.listbox_elem_type = "category"
+
+        # Local Listbox() id
+        self.ctgry_list.EdList.listbox_elem_type = "category"
 
     def __files__(self):
         # File listview
@@ -275,7 +295,7 @@ class PyPadGUI():
         self.file_list.pack(side="top")
         
         # Local object listbox name identifier
-        self.file_list.listbox_elem_type = "file"
+        self.file_list.EdList.listbox_elem_type = "file"
 
     def __notepad__(self):
         # Notepad Window
@@ -322,13 +342,13 @@ class PyPadGUI():
 
 
     """ Public Listbox Methods"""
-    def listbox_add_event(self, event):
+    def listbox_add_event(self):
         self._listbox_handle("add")
         
-    def listbox_edit_event(self, event):
+    def listbox_edit_event(self):
         self._listbox_handle("edit")
         
-    def listbox_delete_event(self, event):
+    def listbox_delete_event(self):
         self._listbox_handle("del")
 
     def _listbox_handle(self, func=None):
@@ -340,31 +360,31 @@ class PyPadGUI():
             mb.showwarning("No List Selected", "A list must be selected to apply a function.")
             return False
 
-        lb_elem_type = self.lb_widget.listbox_elem_type.lower()
+        lb_elem_type = self.lb_widget.EdList.listbox_elem_type.lower()
         
-        if not (lb_elem_type == "category" or lb_elem_type == "file"):
+        if not lb_elem_type in ['category', 'file']:
             print("WARNING: _listbox_handle():: self.lb_widget.listbox_name:: ValueError: Undefined")
             return None
-            
-        name = self.lb_widget.get()
-        
+
+
         # Process UI event code and make respective handle calls
         if func == "add":
             self.lb_widget.insert("end", "New Item")
             indx = self.lb_widget.size() - 1
-            self.lb_widget.start_edit(indx)
+            self.lb_widget.start_edit(indx, \
+                self.listbox_add)
 
-            self.listbox_file_add(lb_elem_type, name)
 
         elif func == "edit":
             self.lb_widget.start_edit(indx)
             
-            self.listbox_file_edit(lb_elem_type, name)
+            self.listbox_edit(lb_elem_type, self.lb_widget.old_data, self.lb_widget.new_data)
+
 
         elif func == "del":
             
         
-            self.listbox_file_delete(lb_elem_type, name)
+            self.listbox_delete(lb_elem_type, name)
             pass
 
         else:
@@ -374,30 +394,29 @@ class PyPadGUI():
 
     """Listbox file functions - Add, Edit, Delete
         listbox_*(ftype, name)
-            ftype - file type: (directory | file)
-            name - filesystem level, name of file
+            ftype - file type: (category | file)
+            file - filesystem level, name of file
     """
-    def listbox_file_add(self, ftype, file):
-        if ftype == "file":
+    def listbox_add(self, dataObj):
+        print("listbox_file_add():: call (BEGIN)")
+        print("listbox_file_add():: dataObj->new_data:: ", dataObj.new_data)
+        if dataObj.listbox_elem_type == "file":
+            self.fo.touch(dataObj.new_data)
             
-            
-        elif ftype == "directory":
-        
+        elif dataObj.listbox_elem_type == "category":
+            self.fo.mkdir(dataObj.new_data)
         
         else:
             print("ERROR:: listbox_file_add():: Unknown Error - AABBCC93829283")
             return False
+            
+        print("listbox_file_add():: call (END)")
 
 
-    def listbox_file_edit(self, ftype, name):
-        if self.slctn_path['ctgry'] != None:
-            print("category_edit()")
-            indx = self.ctgry_list.curselection()
-            print(indx)
-            self.ctgry_list.start_edit(indx)
+    def listbox_edit(self, ftype, old, new):
+        self.fo.rename(old, new)
 
-
-    def listbox_file_delete(self, ftype, name):
+    def listbox_delete(self, ftype, name):
         pass
 
 
@@ -405,7 +424,7 @@ class PyPadGUI():
     def files_get(self, event):
         files = []
 
-        for file in os.listdir(self.ctgry_path + self.slctn_path['ctgry']):
+        for file in os.listdir(self.fo.path + self.slctn_path['ctgry']):
             files.append(file)
 
         return files
@@ -432,7 +451,7 @@ class PyPadGUI():
 
     def notepad_open(self, file):
         try:
-            fd = open(self.ctgry_path + self.slctn_path['ctgry'] + "/" + file, "r")
+            fd = open(f"{self.fo.path}{self.slctn_path['ctgry']}\{file}", "r")
         except FileNotFoundError:
             print("ERROR: that file does not exist. TODO: Make this a messageBOX")
             return False
@@ -462,8 +481,7 @@ class PyPadGUI():
             
             
         try:
-            fd = open(self.ctgry_path + self.slctn_path['ctgry'] + "/" \
-                + self.slctn_path['file'], "w")
+            fd = open(f"{self.fo.path}{self.slctn_path['ctgry']}\{self.slctn_path['file']}", "w")
         except FileNotFoundError:
             print("ERROR: A weird one.")
 
