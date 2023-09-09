@@ -22,6 +22,7 @@ class DataHandle:
     EditLbox_new_entry = None
     slctn_path = {'ctgry' : None, 'file' : None}
 
+
 class FileOps():
     '''TODO: 
         - Add failsafe datapath so cwd() is used if user definition fails
@@ -29,87 +30,86 @@ class FileOps():
     '''
     def __init__(self, base_path=None, data_path=None):
         if base_path:
-            self.path = fr'{os.path.abspath(base_path)}\\'
+            self.path = fr'{os.path.abspath(base_path)}'
         else:
-            self.path = fr'{os.getcwd()}\\'
+            self.path = fr'{os.getcwd()}'
 
         if data_path:
-            self.path = fr'{self.path}{data_path}\\'
+            self.path = fr'{self.path}\\{data_path}'
 
         if not os.path.exists(self.path):
             raise FileNotFoundError(self.path, " non-existent")
 
+        self.dh = DataHandle()
+
     def get_base(self):
-        pass
+        base = self.path
+        ctgry = self.dh.slctn_path['ctgry']
+        file = self.dh.slctn_path['file']
+        
+        try:
+            if file:
+                base = f'{base}\\{ctgry}\\{file}'
+            else:
+                base = f'{base}\\{ctgry}'
 
-    def is_file(self, file):
-        if isinstance(file, list):
-            for x in file:
-                ret = os.path.isfile(fr'{self.path}{file}')
-                
-                if not ret:
-                    return False
-                    
-        else:
-            ret = os.path.isfile(fr'{self.path}{file}')
+        except:
+            print('ERROR:: FileOps():: get_base():: ValueError')
             
-        return ret
+        return base
 
-    def is_dir(self, file):
-        if isinstance(file, list):
-            for x in file:
-                ret = os.path.isdir(fr'{self.path}{file}')
-                
-                if not ret:
-                    return False
-                    
-        else:
-            ret = os.path.isdir(fr'{self.path}{file}')
-            
-        return ret
+    def is_file(self):
+        file = self.get_base()
+        return os.path.isfile(file)
 
-    def is_rw(self, file):
-        if isinstance(file, list):
-            for x in file:
-                ret = os.access(fr'{self.path}{file}', os.R_OK & os.W_OK)
-                
-                if not ret:
-                    return False
-                    
-        else:
-            ret = os.access(fr'{self.path}{file}', os.R_OK & os.W_OK)
-            
-        return ret
+    def is_dir(self):
+        file = self.get_base()
+        os.path.isdir(file)
 
-    def touch(self, file):
-        if self.is_file(file):
-            print(fr'WARNING: Could not create file "{self.path}{file}". File exists.')
+    def is_rw(self):
+        file = self.get_base()
+        os.access(file, os.R_OK & os.W_OK)
+
+    def touch(self):
+        file = self.get_base()
+        
+        if self.is_file():
+            print(fr'WARNING: Could not create file "{file}". File exists.')
             return False
 
-        fd = open(fr'{self.path}{file}', "x")
+        fd = open(file, "x")
         fd.close()
 
         return True
         
-    def mkdir(self, file):
-        if self.is_dir(file):
-            print(fr'ALERT: Did not create directory: "{self.path}{file}". Directory exists.')
+    def mkdir(self):
+        file = self.get_base()
+        
+        if self.is_dir():
+            print(fr'ALERT: Did not create directory: "{file}". Directory exists.')
             return False
         else:
-            os.mkdir(fr'{self.path}{file}')
+            os.mkdir(file)
         
         return True
 
-    def rename(self, old, new):
-            os.rename(fr'{self.path}{old}', fr'{self.path}{new}')
+    def rename(self, new):
+        file = self.get_base()
+        tmp = file.split("\\")
+        new_path = "\\".join(tmp[0:-1])
+        print(f"FileOps():: rename():: {new_path}")
+        
+        os.rename(file, fr'{new_path}\\{new}')
 
-    def delete(self, file):
-        if self.is_file(file):
-            os.remove(fr'{self.path}{file}')
-        elif self.is_dir(file):
-            os.rmdir(fr'{self.path}{file}')
+    def delete(self):
+        file = self.get_base()
+
+        if self.is_file():
+            os.remove(file)
+            return True
         else:
-            raise Exception(fr'FileError: Unknown file operation error: "{self.path}{file}')
+            os.rmdir(file)
+            return True
 
 
 class EditableListbox(tk.Listbox):
@@ -233,13 +233,13 @@ class PyPadGUI():
         self.ui_btn_frame = tk.Frame(self.left_frame)
         self.ui_btn_frame.pack(side="top")
 
-        self.ui_add = tk.Button(self.ui_btn_frame, text="Add", command=self.listbox_add_event)
+        self.ui_add = tk.Button(self.ui_btn_frame, text="Add", command=self.listbox_add_clicked)
         self.ui_add.pack(side="left")
 
-        self.ui_edit = tk.Button(self.ui_btn_frame, text="Edit", command=self.listbox_edit_event)
+        self.ui_edit = tk.Button(self.ui_btn_frame, text="Edit", command=self.listbox_edit_clicked)
         self.ui_edit.pack(side="left")
 
-        self.ui_delete = tk.Button(self.ui_btn_frame, text="Delete", command=self.listbox_delete_event)
+        self.ui_delete = tk.Button(self.ui_btn_frame, text="Delete", command=self.listbox_delete_clicked)
         self.ui_delete.pack(side="left")    
 
     def __categories__(self):
@@ -256,6 +256,9 @@ class PyPadGUI():
         categories = os.listdir(DataHandle.datapath)
         categories.sort()
 
+        if len(categories) == 0:
+            self.disable_ui_btns()
+            
         for categ in categories:
             self.ctgry_list.insert("end", categ)
 
@@ -293,7 +296,7 @@ class PyPadGUI():
         lbox = self.ctgry_list.curselection()[0]
         selctn = self.ctgry_list.get(lbox)
         DataHandle.slctn_path['ctgry'] = selctn
-        DataHandle.slctn_path['file'] = ''
+        DataHandle.slctn_path['file'] = None
 
         # Clear the filename listbox
         self.file_list.delete(0, "end")
@@ -324,67 +327,60 @@ class PyPadGUI():
         self.notepad_clear()
         self.notepad_open(DataHandle.slctn_path['file'])
 
+    def on_focus(self, event):
+        pass
+
 
     """ Public Listbox Methods"""
-    def listbox_add_event(self):
-        self._listbox_handle("add")
-        
-    def listbox_edit_event(self):
-        self._listbox_handle("edit")
-        
-    def listbox_delete_event(self):
-        self._listbox_handle("del")
+    def listbox_add_clicked(self):
+        self.listbox_handle("add")
 
-    # Listbox selection handle
-    def _listbox_handle(self, func=None):
-        self.lb_widget = self.root.focus_get()
+    def listbox_edit_clicked(self):
+        self.listbox_handle("edit")
 
-        if self.lb_widget.size() == 0:
-            self.ui_edit['state'] = 'disabled'
-            self.ui_delete['state'] = 'disabled'
-            
+    def listbox_delete_clicked(self):
+        self.listbox_handle("delete")
+
+    def listbox_handle(self, func=None):
+        lb_widget = self.root.focus_get()
+
+        if lb_widget.size() == 0:
+            self.disable_ui_btns()
+            self.listbox_add()
+            return
+
         else:
             try:
-                indx = self.lb_widget.curselection()[0]
-            except IndexError:
-                mb.showwarning("No List Selected", "A list must be selected to apply a function.")
-                return False
+                indx = lb_widget.curselection()[0]
+            except:
+                print("WARNING: Supressed error for quiet UI behavior: Unknown circumstance - JJWWUSKKWUU")
 
-            if not self.lb_widget.elem_type in ['category', 'file']:
-                print("WARNING: _listbox_handle():: self.lb_widget.listbox_name:: ValueError: Undefined")
-                return None
+
+        if not lb_widget.elem_type in ['category', 'file']:
+            print("WARNING: _listbox_handle():: lb_widget.listbox_name:: ValueError: Undefined")
+            return None
 
 
         # Process UI event code and make respective handle calls
         if func == "add":
-            self.lb_widget.insert("end", "New Item")
-            indx = self.lb_widget.size() - 1
-            self.lb_widget.start_edit(indx, \
-                self.listbox_add_callback)
-
+            self.listbox_add(lb_widget)
 
         elif func == "edit":
-            self.lb_widget.start_edit(indx)
-            
-            self.listbox_edit(lb_elem_type, self.lb_widget.old_data, self.lb_widget.new_data)
+            self.listbox_edit(lb_widget)
 
+        elif func == "delete":
 
-        elif func == "del":
-            
-        
-            self.listbox_delete(lb_elem_type, name)
-            pass
+            self.listbox_delete(lb_widget)
 
         else:
             print("WARNING: _listbox_handle(): ", func, " invalid argument.")
             return None
 
+    def listbox_add(self, wdgtObj):
+        wdgtObj.insert("end", "New Item")
+        indx = wdgtObj.size() - 1
+        wdgtObj.start_edit(indx, self.listbox_add_callback)
 
-    """Listbox file functions - Add, Edit, Delete 
-        listbox_*(ftype, name)
-            ftype - file type: (category | file)
-            file - filesystem level, name of file
-    """
     def listbox_add_callback(self, wdgtObj):
         if wdgtObj.elem_type == "file":
             self.fo.touch(fr"{DataHandle.slctn_path['ctgry']}\\{DataHandle.EditLbox_new_entry}")
@@ -396,18 +392,29 @@ class PyPadGUI():
             print("ERROR:: listbox_file_add():: Unknown Error - AABBCC93829283")
             return False
 
-    def listbox_edit(self, ftype, old, new):
-        self.fo.rename(old, new)
+    def listbox_edit(self, wdgtObj):
+        wdgtObj.start_edit(indx, listbox_edit_callback)
 
-    def listbox_delete(self, ftype, name):
-        pass
+    def listbox_edit_callback(self, wdgtObj):
+        self.fo.rename(DataHandle.EditLbox_old_entry, DataHandle.EditLbox_new_entry)
+        
+    def listbox_delete(self, wdgtObj):
+        wdgtObj = self.root.focus_get()
+        elem = wdgtObj.get(wdgtObj.curselection()[0])
+        del_bool = mb.askyesno("Confirm Delete", f'You are about to delete {elem}.\nAre you sure?')
+        
+        
+        if del_bool:
+            self.fo.delete()
+            wdgtObj.delete(wdgtObj.curselection()[0])
 
 
     """ Public Files Methods"""
     def files_get(self, event):
         files = []
 
-        for file in os.listdir(self.fo.path + DataHandle.slctn_path['ctgry']):
+        path = f"{DataHandle.basepath}\\{DataHandle.datapath}\\{DataHandle.slctn_path['ctgry']}"
+        for file in os.listdir(path):
             files.append(file)
 
         return files
@@ -477,6 +484,17 @@ class PyPadGUI():
 
     def mainloop(self):
         self.root.mainloop()
+
+    """ Misc UI Functions"""
+    def enable_ui_btns(self):
+        self.ui_edit['state'] = 'disabled'
+        self.ui_delete['state'] = 'disabled'
+        
+    def disable_ui_btns(self):
+        self.ui_edit['state'] = 'normal'
+        self.ui_edit['state'] = 'normal'
+
+
 
 
 # Main loop()
