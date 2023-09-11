@@ -20,7 +20,7 @@ class DataHandle:
     listbox_elem_type = None
     EditLbox_old_entry = None
     EditLbox_new_entry = None
-    slctn_path = {'ctgry' : None, 'file' : None}
+    slctn_path = {'category' : None, 'file' : None}
 
 
 class FileOps():
@@ -44,7 +44,7 @@ class FileOps():
 
     def get_base(self):
         base = self.path
-        ctgry = self.dh.slctn_path['ctgry']
+        ctgry = self.dh.slctn_path['category']
         file = self.dh.slctn_path['file']
         
         try:
@@ -108,6 +108,11 @@ class FileOps():
             os.remove(file)
             return True
         else:
+            files = os.listdir(file)
+            
+            for dlt in files:
+                os.remove(f'{file}\\{dlt}')
+                
             os.rmdir(file)
             return True
 
@@ -119,12 +124,8 @@ class EditableListbox(tk.Listbox):
         super().__init__(master, **kwargs)
         self.edit_item = None
 
-    def _start_edit(self, event):
-        index = self.index(f"@{event.x},{event.y}")
-        self.start_edit(index)
-        return "break"
-
     def start_edit(self, index, accept_func=None,cancel_func=None):
+        self.cur_index = index
         self.accept_func = accept_func
         self.cancel_func = cancel_func
 
@@ -148,6 +149,9 @@ class EditableListbox(tk.Listbox):
     def cancel_edit(self, event):
         DataHandle.EditLbox_new_entry = None
         event.widget.destroy()
+        
+        self.selection_clear(0, "end")
+        self.selection_set(self.cur_index)
 
         if self.cancel_func:
             self.cancel_func(self)
@@ -158,17 +162,14 @@ class EditableListbox(tk.Listbox):
         self.insert(self.edit_item, DataHandle.EditLbox_new_entry)
         event.widget.destroy()
         
+        self.selection_clear(0, "end")
+        self.selection_set(self.cur_index)
 
         if self.accept_func:
             self.accept_func(self)
 
 
 class PyPadGUI():
-    #ctgry_path = r'userData/Categories'
-    #slctn_path = {'ctgry' : None, 'file' : None}
-    #listbox_elem_type = None
-
-
     def __init__(self):
         self.fo = FileOps(DataHandle.basepath, DataHandle.datapath)
     
@@ -180,7 +181,6 @@ class PyPadGUI():
         self.__files__()
         self.__notepad__()
         self.__event_handler__()
-
 
     """ Local GUI Methods"""
     def __GUI__(self):
@@ -194,8 +194,8 @@ class PyPadGUI():
 
     def __event_handler__(self):
         # Navigation pane events
-        self.ctgry_list.bind('<Double-1>', self.category_dblClick_event, add="+")
-        self.file_list.bind('<ButtonRelease-1>', self.file_click_event, add="+")
+        self.ctgry_list.bind('<ButtonRelease-1>', self.category_click_event)
+        self.file_list.bind('<ButtonRelease-1>', self.file_click_event)
 
     def __file_menu__(self):
         ### File Bar
@@ -288,48 +288,62 @@ class PyPadGUI():
     def __statusbar__(self):
         pass
 
-
     """ Public Event Handling Methods"""
-    def category_dblClick_event(self, event):
-        self.notepad_change()
+    def category_click_event(self, event):
+        self.notepad_save()
+        self.notepad_clear()
+        
+        self.set_slctn_path()
 
         lbox = self.ctgry_list.curselection()[0]
         selctn = self.ctgry_list.get(lbox)
-        DataHandle.slctn_path['ctgry'] = selctn
+        DataHandle.slctn_path['category'] = selctn
         DataHandle.slctn_path['file'] = None
 
-        # Clear the filename listbox
         self.file_list.delete(0, "end")
-
-        # Get our files from userData
         files = self.files_get(selctn)
-
-        # Update our file listbox
 
         for file in files:
             self.file_list.insert("end", file)
 
         self.notepad_disable()
-        
-        self.file_list.focus_set()
 
     def file_click_event(self, event):
-        if DataHandle.slctn_path['file'] != '':
+        if DataHandle.slctn_path['file']:
             self.notepad_save()
         
         try:
             indx = self.file_list.curselection()[0]
         except IndexError:
-            indx = 0
-        read_file = self.file_list.get(indx)
-        DataHandle.slctn_path['file'] = read_file
+            print("ERROR: PyPadGUI:: file_click_event():: Index out of range")
+
+        self.set_slctn_path()
 
         self.notepad_clear()
         self.notepad_open(DataHandle.slctn_path['file'])
+        self.notepad.focus_set()
 
-    def on_focus(self, event):
-        pass
+    def set_slctn_path(self):
+        wdgt = self.root.focus_get()
+        
+        try:
+            indx = wdgt.curselection()[0]
+        except:
+            indx = 0
+            
+            
+        if wdgt.elem_type == "file":
+            DataHandle.slctn_path['file'] = wdgt.get(indx)
 
+        elif wdgt.elem_type == "category":
+            DataHandle.slctn_path['file'] = None
+            DataHandle.slctn_path['category'] = wdgt.get(indx)
+        
+        else:
+            print("ERROR:: PyPadGUI:: focus_in_event():: unknown circumstance.")
+            
+        print(DataHandle.slctn_path)
+        return fr"{DataHandle.slctn_path['category']}\\{DataHandle.slctn_path['file']}"
 
     """ Public Listbox Methods"""
     def listbox_add_clicked(self):
@@ -355,11 +369,9 @@ class PyPadGUI():
             except:
                 print("WARNING: Supressed error for quiet UI behavior: Unknown circumstance - JJWWUSKKWUU")
 
-
         if not lb_widget.elem_type in ['category', 'file']:
             print("WARNING: _listbox_handle():: lb_widget.listbox_name:: ValueError: Undefined")
             return None
-
 
         # Process UI event code and make respective handle calls
         if func == "add":
@@ -369,7 +381,6 @@ class PyPadGUI():
             self.listbox_edit(lb_widget)
 
         elif func == "delete":
-
             self.listbox_delete(lb_widget)
 
         else:
@@ -383,70 +394,66 @@ class PyPadGUI():
 
     def listbox_add_callback(self, wdgtObj):
         if wdgtObj.elem_type == "file":
-            self.fo.touch(fr"{DataHandle.slctn_path['ctgry']}\\{DataHandle.EditLbox_new_entry}")
+            self.fo.touch()
             
         elif wdgtObj.elem_type == "category":
-            self.fo.mkdir(DataHandle.EditLbox_new_entry)
+            self.fo.mkdir()
         
         else:
             print("ERROR:: listbox_file_add():: Unknown Error - AABBCC93829283")
             return False
 
     def listbox_edit(self, wdgtObj):
-        wdgtObj.start_edit(indx, listbox_edit_callback)
+        indx = wdgtObj.curselection()[0]
+        wdgtObj.start_edit(indx, self.listbox_edit_callback)
+        print("Focus returned")
 
     def listbox_edit_callback(self, wdgtObj):
-        self.fo.rename(DataHandle.EditLbox_old_entry, DataHandle.EditLbox_new_entry)
+        self.fo.rename(DataHandle.EditLbox_new_entry)
         
     def listbox_delete(self, wdgtObj):
         wdgtObj = self.root.focus_get()
         elem = wdgtObj.get(wdgtObj.curselection()[0])
-        del_bool = mb.askyesno("Confirm Delete", f'You are about to delete {elem}.\nAre you sure?')
+        del_bool = mb.askyesno("Confirm Delete", f'You are about to delete {elem}. This will permenantly delete the folder and all files.\nAre you sure?')
         
         
         if del_bool:
             self.fo.delete()
             wdgtObj.delete(wdgtObj.curselection()[0])
 
-
     """ Public Files Methods"""
     def files_get(self, event):
         files = []
 
-        path = f"{DataHandle.basepath}\\{DataHandle.datapath}\\{DataHandle.slctn_path['ctgry']}"
+        path = f"{DataHandle.basepath}\\{DataHandle.datapath}\\{DataHandle.slctn_path['category']}"
         for file in os.listdir(path):
             files.append(file)
 
         return files
 
-
     """ Public Notepad Methods"""
-    def notepad_change(self):
-        self.notepad_save()
-        self.notepad_clear()
-        self.notepad.edit_modified(False)
-
-    def notepad_clear(self):
-        self.notepad.delete("0.0", "end")
-
+    def notepad_enable(self):
+        self.notepad.config(cursor="xterm")
+        self.notepad.config(bg="#ffffff")
+        self.notepad.config(state="normal")
+        
     def notepad_disable(self):
         self.notepad.config(cursor="arrow")
         self.notepad.config(bg="#F0F0F0")
         self.notepad.config(state="disabled")
 
-    def notepad_enable(self):
-        self.notepad.config(cursor="xterm")
-        self.notepad.config(bg="#ffffff")
-        self.notepad.config(state="normal")
+    def notepad_clear(self):
+        self.notepad.delete("0.0", "end")
 
     def notepad_open(self, file):
         try:
-            fd = open(f"{self.fo.path}\{DataHandle.slctn_path['ctgry']}\{file}", "r")
+            fd = open(self.fo.get_base(), "r")
         except FileNotFoundError:
             print("ERROR: that file does not exist. TODO: Make this a messageBOX")
             return False
         
         self.notepad_enable()
+        self.notepad_clear()
         
         chunk = fd.read(1024)
         while chunk != '':
@@ -454,26 +461,21 @@ class PyPadGUI():
             chunk = fd.read(1024)
         
         fd.close()
-        
         self.notepad.edit_modified(False)
 
     def notepad_save(self):
-        if DataHandle.slctn_path['ctgry'] == None or DataHandle.slctn_path['file'] == None:
-            print("WARNING: slctn_path[] is not set. Nothing saved.")
-            return False
-            
-        elif DataHandle.slctn_path['file'] == '':
-            print("WARNING: No file path set/selected. Nothing saved.")
+        if DataHandle.slctn_path['file'] == None or \
+           DataHandle.slctn_path['category'] == None:
+            print("WARNING: Datahandle.slctn_path[] is not set. Nothing saved.")
             return False
         
         elif not self.notepad.edit_modified():
             return False
             
-            
         try:
-            fd = open(f"{self.fo.path}{DataHandle.slctn_path['ctgry']}\{DataHandle.slctn_path['file']}", "w")
+            fd = open(self.fo.get_base(), "w")
         except FileNotFoundError:
-            print("ERROR: A weird one. - 9372ieklsfnuwiiojfdsa")
+            print("ERROR: PyPadGUI:: notepad_save():: File could not be found on system.")
 
         # TODO: Make this section write through chunks from notepad
         blob = self.notepad.get("0.0", "end")
@@ -481,6 +483,7 @@ class PyPadGUI():
         fd.close()
         
         self.notepad.edit_modified(False)
+        return True
 
     def mainloop(self):
         self.root.mainloop()
@@ -493,8 +496,6 @@ class PyPadGUI():
     def disable_ui_btns(self):
         self.ui_edit['state'] = 'normal'
         self.ui_edit['state'] = 'normal'
-
-
 
 
 # Main loop()
