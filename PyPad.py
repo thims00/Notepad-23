@@ -44,6 +44,7 @@ class FileOps():
         self.dh = DataHandle()
 
     def get_base(self):
+        """Return a properly formatted path string, compiled from DataHandle and slctn_path[]"""
         base = self.path
         ctgry = self.dh.slctn_path['category']
         file = self.dh.slctn_path['file']
@@ -59,8 +60,27 @@ class FileOps():
             
         return base
 
-    def is_file(self):
-        file = self.get_base()
+    def get_files(self):
+        """Return a list of files from get_base() or False otherwise."""
+        files = []
+        path = self.get_base()
+        
+        if self.is_file():
+            print(f"WARNING: FileOps():: get_files():: '{path}' is a regular file, not iterable")
+            return False
+            
+        for file in os.listdir(path):
+            files.append(file)
+
+        if len(files) <= 0:
+            return False
+            
+        return files
+
+    def is_file(self, file=None):
+        if not file:
+            file = self.get_base()
+        
         return os.path.isfile(file)
 
     def is_dir(self):
@@ -303,12 +323,13 @@ class PyPadGUI():
         DataHandle.slctn_path['file'] = None
 
         self.file_list.delete(0, "end")
-        files = self.files_get(selctn)
-
-
         self.file_list['state'] = "normal"
-        for file in files:
-            self.file_list.insert("end", file)
+
+        files = self.fo.get_files()
+
+        if files:
+            for file in files:
+                self.file_list.insert("end", file)
 
         self.notepad_disable()
         DataHandle.lb_last_focus = self.ctgry_list
@@ -320,16 +341,17 @@ class PyPadGUI():
         if DataHandle.slctn_path['file']:
             self.notepad_save()
         
-        try:
-            indx = self.file_list.curselection()[0]
-        except IndexError:
-            print("ERROR: PyPadGUI:: file_click_event():: Index out of range")
+        if event.widget.size() > 0:
+            try:
+                indx = self.file_list.curselection()[0]
+            except IndexError:
+                print("ERROR: PyPadGUI:: file_click_event():: Index out of range")
 
-        self.set_slctn_path()
+            self.set_slctn_path()
 
-        self.notepad_clear()
-        self.notepad_open(DataHandle.slctn_path['file'])
-        DataHandle.lb_last_focus = self.file_list
+            self.notepad_clear()
+            self.notepad_open(DataHandle.slctn_path['file'])
+            DataHandle.lb_last_focus = self.file_list
 
     def set_slctn_path(self):
         """Update the UserHandle selection path after environment changes.
@@ -442,7 +464,7 @@ class PyPadGUI():
                 self.file_list.delete(0, "end")
 
     """ Public Files Methods"""
-    def files_get(self, event):
+    """def files_get(self, event):
         files = []
 
         path = f"{DataHandle.basepath}\\{DataHandle.datapath}\\{DataHandle.slctn_path['category']}"
@@ -452,7 +474,7 @@ class PyPadGUI():
         if len(files) == 0:
             return None
             
-        return files
+        return files"""
 
     """ Public Notepad Methods"""
     def notepad_enable(self):
