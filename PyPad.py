@@ -21,6 +21,7 @@ class DataHandle:
     EditLbox_old_entry = None
     EditLbox_new_entry = None
     slctn_path = {'category' : None, 'file' : None}
+    lb_last_focus = None
 
 
 class FileOps():
@@ -166,6 +167,7 @@ class EditableListbox(tk.Listbox):
         self.selection_set(self.cur_index)
 
         if self.accept_func:
+            print("EditableListbox:: accept_edit():: callback:: print(type()): ", print(type(self)), " winfo_name:", self.winfo_name())
             self.accept_func(self)
 
 
@@ -303,12 +305,18 @@ class PyPadGUI():
         self.file_list.delete(0, "end")
         files = self.files_get(selctn)
 
+
+        self.file_list['state'] = "normal"
         for file in files:
             self.file_list.insert("end", file)
 
         self.notepad_disable()
+        DataHandle.lb_last_focus = self.ctgry_list
 
     def file_click_event(self, event):
+        if self.file_list['state'] == 'disabled':
+            return False
+            
         if DataHandle.slctn_path['file']:
             self.notepad_save()
         
@@ -321,11 +329,13 @@ class PyPadGUI():
 
         self.notepad_clear()
         self.notepad_open(DataHandle.slctn_path['file'])
-        self.notepad.focus_set()
+        DataHandle.lb_last_focus = self.file_list
 
     def set_slctn_path(self):
+        """Update the UserHandle selection path after environment changes.
+        Works based off the highlighted curselection()"""
         wdgt = self.root.focus_get()
-        
+        print("set_slctn_path():: ", type(wdgt), ":: ", wdgt.winfo_name())
         try:
             indx = wdgt.curselection()[0]
         except:
@@ -336,13 +346,13 @@ class PyPadGUI():
             DataHandle.slctn_path['file'] = wdgt.get(indx)
 
         elif wdgt.elem_type == "category":
-            DataHandle.slctn_path['file'] = None
             DataHandle.slctn_path['category'] = wdgt.get(indx)
-        
+            DataHandle.slctn_path['file'] = None
+
         else:
-            print("ERROR:: PyPadGUI:: focus_in_event():: unknown circumstance.")
+            print("ERROR:: PyPadGUI:: set_slctn_path():: unknown circumstance.")
             
-        print(DataHandle.slctn_path)
+        print(f"set_slctn_path():: {DataHandle.slctn_path}")
         return fr"{DataHandle.slctn_path['category']}\\{DataHandle.slctn_path['file']}"
 
     """ Public Listbox Methods"""
@@ -360,7 +370,7 @@ class PyPadGUI():
 
         if lb_widget.size() == 0:
             self.disable_ui_btns()
-            self.listbox_add()
+            self.listbox_add(lb_widget)
             return
 
         else:
@@ -393,7 +403,12 @@ class PyPadGUI():
         wdgtObj.start_edit(indx, self.listbox_add_callback)
 
     def listbox_add_callback(self, wdgtObj):
+        DataHandle.lb_last_focus.focus_set()
+        self.set_slctn_path()
+        print("listbox_add_callback:: type(wdgt):: ", type(wdgtObj), ":: ", wdgtObj.winfo_name())
+        
         if wdgtObj.elem_type == "file":
+            DataHandle.slctn_path['file'] = DataHandle.EditLbox_new_entry
             self.fo.touch()
             
         elif wdgtObj.elem_type == "category":
@@ -410,6 +425,8 @@ class PyPadGUI():
 
     def listbox_edit_callback(self, wdgtObj):
         self.fo.rename(DataHandle.EditLbox_new_entry)
+        DataHandle.slctn_path['category'] = DataHandle.EditLbox_new_entry
+        DataHandle.lb_last_focus.focus_set()
         
     def listbox_delete(self, wdgtObj):
         wdgtObj = self.root.focus_get()
@@ -420,6 +437,9 @@ class PyPadGUI():
         if del_bool:
             self.fo.delete()
             wdgtObj.delete(wdgtObj.curselection()[0])
+            
+            if wdgtObj.elem_type == "category":
+                self.file_list.delete(0, "end")
 
     """ Public Files Methods"""
     def files_get(self, event):
@@ -429,6 +449,9 @@ class PyPadGUI():
         for file in os.listdir(path):
             files.append(file)
 
+        if len(files) == 0:
+            return None
+            
         return files
 
     """ Public Notepad Methods"""
