@@ -7,6 +7,7 @@
 - Individual file export
 - Backup option to archive the contents of the database
 - folder delete undo option
+- Make the navigation panes collapsible/hideable.
 
 Keybindings:
 - Vim style keybindings for navigation

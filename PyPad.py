@@ -22,6 +22,7 @@ class DataHandle:
     EditLbox_new_entry = None
     slctn_path = {'category' : None, 'file' : None}
     lb_last_focus = None
+    status = "I've got a lovely bunch of coconuts."
 
 
 class FileOps():
@@ -48,7 +49,7 @@ class FileOps():
         base = self.path
         ctgry = self.dh.slctn_path['category']
         file = self.dh.slctn_path['file']
-        
+
         try:
             if file:
                 base = f'{base}\\{ctgry}\\{file}'
@@ -57,30 +58,30 @@ class FileOps():
 
         except:
             print('ERROR: FileOps():: get_base():: ValueError')
-            
+
         return base
 
     def get_files(self):
         """Return a list of files from get_base() or False otherwise."""
         files = []
         path = self.get_base()
-        
+
         if self.is_file():
             print(f"WARNING: FileOps():: get_files():: '{path}' is a regular file, not iterable")
             return False
-            
+
         for file in os.listdir(path):
             files.append(file)
 
         if len(files) <= 0:
             return False
-            
+
         return files
 
     def is_file(self, file=None):
         if not file:
             file = self.get_base()
-        
+
         return os.path.isfile(file)
 
     def is_dir(self):
@@ -93,7 +94,7 @@ class FileOps():
 
     def touch(self):
         file = self.get_base()
-        
+
         if self.is_file():
             print(fr'WARNING: Could not create file "{file}". File exists.')
             return False
@@ -102,23 +103,23 @@ class FileOps():
         fd.close()
 
         return True
-        
+
     def mkdir(self):
         file = self.get_base()
-        
+
         if self.is_dir():
             print(fr'WARNING: Did not create directory: "{file}". Directory exists.')
             return False
         else:
             os.mkdir(file)
-        
+
         return True
 
     def rename(self, new):
         file = self.get_base()
         tmp = file.split("\\")
         new_path = "\\".join(tmp[0:-1])
-        
+
         os.rename(file, fr'{new_path}\\{new}')
 
     def delete(self):
@@ -129,10 +130,10 @@ class FileOps():
             return True
         else:
             files = os.listdir(file)
-            
+
             for dlt in files:
                 os.remove(f'{file}\\{dlt}')
-                
+
             os.rmdir(file)
             return True
 
@@ -169,7 +170,7 @@ class EditableListbox(tk.Listbox):
     def cancel_edit(self, event):
         DataHandle.EditLbox_new_entry = None
         event.widget.destroy()
-        
+
         self.selection_clear(0, "end")
         self.selection_set(self.cur_index)
 
@@ -181,7 +182,7 @@ class EditableListbox(tk.Listbox):
         self.delete(self.edit_item)
         self.insert(self.edit_item, DataHandle.EditLbox_new_entry)
         event.widget.destroy()
-        
+
         self.selection_clear(0, "end")
         self.selection_set(self.cur_index)
 
@@ -192,7 +193,7 @@ class EditableListbox(tk.Listbox):
 class PyPadGUI():
     def __init__(self):
         self.fo = FileOps(DataHandle.basepath, DataHandle.datapath)
-    
+
         self.__GUI__()
         self.__file_menu__()
         self.__ui_frames__()
@@ -201,6 +202,7 @@ class PyPadGUI():
         self.__files__()
         self.__notepad__()
         self.__event_handler__()
+        self.statusbar()
 
     """ Local GUI Methods"""
     def __GUI__(self):
@@ -213,9 +215,10 @@ class PyPadGUI():
         self.root.rowconfigure(0, weight=1)
 
     def __event_handler__(self):
-        # Navigation pane events
         self.ctgry_list.bind('<ButtonRelease-1>', self.category_click_event)
         self.file_list.bind('<ButtonRelease-1>', self.file_click_event)
+
+        self.notepad.bind("<KeyPress>", self.notepad_edit_event)
 
     def __file_menu__(self):
         ### File Bar
@@ -238,16 +241,25 @@ class PyPadGUI():
         self.helpmenu.add_separator()
         self.helpmenu.add_command(label="About", command="")
         self.menubar.add_cascade(label="Help", menu=self.helpmenu)
-        
+
         # Stack our config
         self.root.config(menu=self.menubar)
 
     def __ui_frames__(self):
-        self.left_frame = tk.Frame(self.root)
-        self.left_frame.pack(side="left", fill="y")
+        self.upper_frame = tk.Frame(self.root)
+        self.upper_frame.pack(side="top", fill="both", expand=1)
 
-        self.right_frame = tk.Frame(self.root)
-        self.right_frame.pack(side="right", fill="both", expand=1)
+        self.left_frame = tk.Frame(self.upper_frame)
+        self.left_frame.pack(side="left", fill="both")
+
+        self.right_frame = tk.Frame(self.upper_frame)
+        self.right_frame.pack(side="right", fill="both")
+
+        self.status_frame = tk.Frame(self.root)
+        self.status_frame.pack(side="bottom", fill="x")
+        self.status_frame['takefocus'] = False
+        self.status_frame['padx'] = 3
+        self.status_frame['relief'] = "sunken"
 
     def __ui_buttons__(self):
         self.ui_btn_frame = tk.Frame(self.left_frame)
@@ -278,7 +290,7 @@ class PyPadGUI():
 
         if len(categories) == 0:
             self.disable_ui_btns()
-            
+
         for categ in categories:
             self.ctgry_list.insert("end", categ)
 
@@ -305,14 +317,18 @@ class PyPadGUI():
         self.notepad_disable()
         self.notepad.pack(side="right", fill="both", expand=1)
 
-    def __statusbar__(self):
-        pass
+    def statusbar(self):
+        self.sb = tk.Label(self.status_frame)
+        self.sb.pack(side="right", fill="y")
+
+        self.sb['text'] = "StatusBar"
+        self.testvar = "testing"
 
     """ Public Event Handling Methods"""
     def category_click_event(self, event):
         self.notepad_save()
         self.notepad_clear()
-        
+
         self.set_slctn_path()
 
         lbox = self.ctgry_list.curselection()[0]
@@ -335,10 +351,10 @@ class PyPadGUI():
     def file_click_event(self, event):
         if self.file_list['state'] == 'disabled':
             return False
-            
+
         if DataHandle.slctn_path['file']:
             self.notepad_save()
-        
+
         if event.widget.size() > 0:
             try:
                 indx = self.file_list.curselection()[0]
@@ -354,13 +370,17 @@ class PyPadGUI():
     def set_slctn_path(self):
         """Update the UserHandle selection path after environment changes.
         Works based off the highlighted curselection()"""
+        print(f"DEBUG: set_slctn_path(PRE):: {DataHandle.slctn_path}")
         wdgt = self.root.focus_get()
-        
+
         try:
             indx = wdgt.curselection()[0]
+            print("DEBUG: set_slctn_path():: Try block")
         except:
-            indx = 0
-            
+            indx = wdgt.size() - 1
+            print("DEBUG: set_slctn_path():: Except block")
+
+
         if wdgt.elem_type == "file":
             DataHandle.slctn_path['file'] = wdgt.get(indx)
 
@@ -370,13 +390,15 @@ class PyPadGUI():
 
         else:
             print("ERROR:: PyPadGUI:: set_slctn_path():: unknown circumstance.")
-            
-        print(f"DEBUG: set_slctn_path():: {DataHandle.slctn_path}")
+
+        print(f"DEBUG: set_slctn_path(POST):: {DataHandle.slctn_path}")
+        self.status()
         return fr"{DataHandle.slctn_path['category']}\\{DataHandle.slctn_path['file']}"
 
     """ Public Listbox Methods"""
     def listbox_add_clicked(self):
         self.listbox_handle("add")
+        print(f"DEBUG: listbox_add_clicked():: {DataHandle.slctn_path}")
 
     def listbox_edit_clicked(self):
         self.listbox_handle("edit")
@@ -405,6 +427,7 @@ class PyPadGUI():
         # Process UI event code and make respective handle calls
         if func == "add":
             self.listbox_add(lb_widget)
+            print(f"DEBUG: listbox_handle():: {DataHandle.slctn_path}")
 
         elif func == "edit":
             self.listbox_edit(lb_widget)
@@ -417,24 +440,29 @@ class PyPadGUI():
             return None
 
     def listbox_add(self, wdgtObj):
+        print(f"DEBUG: listbox_add():: {DataHandle.slctn_path}")
         wdgtObj.insert("end", "New Item")
         indx = wdgtObj.size() - 1
         wdgtObj.start_edit(indx, self.listbox_add_callback)
 
     def listbox_add_callback(self, wdgtObj):
+        print(f"DEBUG: listbox_add_callback():: {DataHandle.slctn_path}")
+        print(f"DEBUG: listbox_add_callback():: winfo_name(wdgtObj):: {wdgtObj.winfo_name()}")
         DataHandle.lb_last_focus.focus_set()
         self.set_slctn_path()
-        
+
         if wdgtObj.elem_type == "file":
             DataHandle.slctn_path['file'] = DataHandle.EditLbox_new_entry
             self.fo.touch()
-            
+
         elif wdgtObj.elem_type == "category":
             self.fo.mkdir()
-        
+
         else:
             print("ERROR:: listbox_file_add():: Unknown Error - AABBCC93829283")
             return False
+
+        self.set_slctn_path()
 
     def listbox_edit(self, wdgtObj):
         indx = wdgtObj.curselection()[0]
@@ -445,61 +473,76 @@ class PyPadGUI():
         self.fo.rename(DataHandle.EditLbox_new_entry)
         DataHandle.slctn_path['category'] = DataHandle.EditLbox_new_entry
         DataHandle.lb_last_focus.focus_set()
-        
+
     def listbox_delete(self, wdgtObj):
         wdgtObj = self.root.focus_get()
         elem = wdgtObj.get(wdgtObj.curselection()[0])
         del_bool = mb.askyesno("Confirm Delete", f'You are about to delete {elem}. This will permenantly delete the folder and all files.\nAre you sure?')
-        
-        
+
+
         if del_bool:
             self.fo.delete()
             wdgtObj.delete(wdgtObj.curselection()[0])
-            
+
             if wdgtObj.elem_type == "category":
                 self.file_list.delete(0, "end")
 
     """ Public Notepad Methods"""
+    def notepad_edit_event(self, event):
+        if self.notepad.edit_modified():
+            self.status("Modified")
+        else:
+            self.status("Saved")
+
     def notepad_enable(self):
         self.notepad.config(cursor="xterm")
         self.notepad.config(bg="#ffffff")
         self.notepad.config(state="normal")
-        
+
+        self.status()
+
     def notepad_disable(self):
         self.notepad.config(cursor="arrow")
         self.notepad.config(bg="#F0F0F0")
         self.notepad.config(state="disabled")
 
+        self.status("Nothing Selected")
+
     def notepad_clear(self):
         self.notepad.delete("0.0", "end")
 
     def notepad_open(self, file):
+        self.status("Opening...")
         try:
             fd = open(self.fo.get_base(), "r")
         except FileNotFoundError:
             print("ERROR: that file does not exist. TODO: Make this a messageBOX")
             return False
-        
+
         self.notepad_enable()
         self.notepad_clear()
-        
+
         chunk = fd.read(1024)
         while chunk != '':
             self.notepad.insert("end", chunk)
             chunk = fd.read(1024)
-        
+
         fd.close()
+
+        self.status("Opened")
         self.notepad.edit_modified(False)
 
     def notepad_save(self):
+        self.status("Saving...")
+        print(f"DEBUG: notepad_save():: {DataHandle.slctn_path}")
         if DataHandle.slctn_path['file'] == None or \
            DataHandle.slctn_path['category'] == None:
-            print("WARNING: Datahandle.slctn_path[] is not set. Nothing saved.")
+            #print("WARNING: Datahandle.slctn_path[] is not set. Nothing saved.")
             return False
-        
+
         elif not self.notepad.edit_modified():
             return False
-            
+
         try:
             fd = open(self.fo.get_base(), "w")
         except FileNotFoundError:
@@ -509,7 +552,8 @@ class PyPadGUI():
         blob = self.notepad.get("0.0", "end")
         fd.write(blob)
         fd.close()
-        
+
+        self.status("Saved")
         self.notepad.edit_modified(False)
         return True
 
@@ -520,10 +564,41 @@ class PyPadGUI():
     def enable_ui_btns(self):
         self.ui_edit['state'] = 'disabled'
         self.ui_delete['state'] = 'disabled'
-        
+
     def disable_ui_btns(self):
         self.ui_edit['state'] = 'normal'
         self.ui_edit['state'] = 'normal'
+
+    def status(self, state=None):
+        """Update status bar path location and/or included state message."""
+        """padding = "    "
+        pad_char="-"
+        pad = f"{padding}{pad_char}{padding}"
+
+        cat = DataHandle.slctn_path['category']
+        if cat:
+            cat = cat.capitalize()
+        else:
+            cat = ""
+
+        file = DataHandle.slctn_path['file']
+        if file:
+            file = file.capitalize()
+        else:
+            file = ""
+
+        path = f"{cat} \ {file}"
+
+        if state:
+            DataHandle.status = f"{path}{pad}{state}"
+        else:
+            DataHandle.status = f"{path}{pad}{DataHandle.slctn_path['file']}"""
+        
+        self.sb['text'] = "status()"
+        #self.statusbar['text'] = "Hello World - Testing..."
+
+    def null(self):
+        pass
 
 
 # Main loop()
