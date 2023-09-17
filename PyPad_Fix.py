@@ -22,7 +22,7 @@ class DataHandle:
     EditLbox_new_entry = None
     slctn_path = {'category' : None, 'file' : None}
     lb_last_focus = None
-    status = ""
+    status = "I've got a lovely bunch of coconuts."
 
 
 class FileOps():
@@ -193,15 +193,10 @@ class EditableListbox(tk.Listbox):
 class PyPadGUI():
     def __init__(self):
         self.fo = FileOps(DataHandle.basepath, DataHandle.datapath)
-
+        
         self.__GUI__()
         self.__file_menu__()
         self.__ui_frames__()
-        self.__ui_buttons__()
-        self.__categories__()
-        self.__files__()
-        self.__notepad__()
-        self.__event_handler__()
         self.statusbar()
 
     """ Local GUI Methods"""
@@ -213,13 +208,13 @@ class PyPadGUI():
         self.root.columnconfigure(1, weight=200)
 
         self.root.rowconfigure(0, weight=1)
-
+        
     def __event_handler__(self):
         self.ctgry_list.bind('<ButtonRelease-1>', self.category_click_event)
         self.file_list.bind('<ButtonRelease-1>', self.file_click_event)
 
         self.notepad.bind("<KeyPress>", self.notepad_edit_event)
-
+        
     def __file_menu__(self):
         ### File Bar
         self.menubar = tk.Menu(self.root)
@@ -232,7 +227,6 @@ class PyPadGUI():
         self.filemenu.add_separator()
         self.filemenu.add_command(label="Exit", command=self.root.quit)
         self.menubar.add_cascade(label="File", menu=self.filemenu)
-
 
         # Help
         self.helpmenu = tk.Menu(self.menubar, tearoff=0)
@@ -272,8 +266,8 @@ class PyPadGUI():
         self.ui_edit.pack(side="left")
 
         self.ui_delete = tk.Button(self.ui_btn_frame, text="Delete", command=self.listbox_delete_clicked)
-        self.ui_delete.pack(side="left")    
-
+        self.ui_delete.pack(side="left")
+        
     def __categories__(self):
         # Categories Listview
         self.ctgry_list_frame = tk.Frame(self.left_frame)
@@ -287,17 +281,7 @@ class PyPadGUI():
         # Populate categories by directory structure
         categories = os.listdir(DataHandle.datapath)
         categories.sort()
-
-        if len(categories) == 0:
-            self.disable_ui_btns()
-
-        for categ in categories:
-            self.ctgry_list.insert("end", categ)
-
-        self.ctgry_list.pack(side="top")
-
-        self.ctgry_list.elem_type = "category"
-
+        
     def __files__(self):
         # File listview
         self.file_list_frame = tk.Frame(self.left_frame)
@@ -310,7 +294,7 @@ class PyPadGUI():
         self.file_list.pack(side="top")
         
         self.file_list.elem_type = "file"
-
+        
     def __notepad__(self):
         # Notepad Window
         self.notepad = tk.Text(self.right_frame)
@@ -323,7 +307,7 @@ class PyPadGUI():
 
         self.sb['text'] = "StatusBar"
         self.testvar = "testing"
-
+        
     """ Public Event Handling Methods"""
     def category_click_event(self, event):
         self.notepad_save()
@@ -347,7 +331,7 @@ class PyPadGUI():
 
         self.notepad_disable()
         DataHandle.lb_last_focus = self.ctgry_list
-
+        
     def file_click_event(self, event):
         if self.file_list['state'] == 'disabled':
             return False
@@ -366,7 +350,7 @@ class PyPadGUI():
             self.notepad_clear()
             self.notepad_open(DataHandle.slctn_path['file'])
             DataHandle.lb_last_focus = self.file_list
-
+    
     def set_slctn_path(self):
         """Update the UserHandle selection path after environment changes.
         Works based off the highlighted curselection()"""
@@ -394,21 +378,21 @@ class PyPadGUI():
         print(f"DEBUG: set_slctn_path(POST):: {DataHandle.slctn_path}")
         self.status()
         return fr"{DataHandle.slctn_path['category']}\\{DataHandle.slctn_path['file']}"
-
+        
     """ Public Listbox Methods"""
     def listbox_add_clicked(self):
         self.listbox_handle("add")
         print(f"DEBUG: listbox_add_clicked():: {DataHandle.slctn_path}")
-
+        
     def listbox_edit_clicked(self):
         self.listbox_handle("edit")
-
+        
     def listbox_delete_clicked(self):
         self.listbox_handle("delete")
 
     def listbox_handle(self, func=None):
         lb_widget = self.root.focus_get()
-
+        
         if lb_widget.size() == 0:
             self.disable_ui_btns()
             self.listbox_add(lb_widget)
@@ -438,13 +422,13 @@ class PyPadGUI():
         else:
             print("WARNING: _listbox_handle(): ", func, " invalid argument.")
             return None
-
+    
     def listbox_add(self, wdgtObj):
         print(f"DEBUG: listbox_add():: {DataHandle.slctn_path}")
         wdgtObj.insert("end", "New Item")
         indx = wdgtObj.size() - 1
         wdgtObj.start_edit(indx, self.listbox_add_callback)
-
+        
     def listbox_add_callback(self, wdgtObj):
         print(f"DEBUG: listbox_add_callback():: {DataHandle.slctn_path}")
         print(f"DEBUG: listbox_add_callback():: winfo_name(wdgtObj):: {wdgtObj.winfo_name()}")
@@ -463,17 +447,17 @@ class PyPadGUI():
             return False
 
         self.set_slctn_path()
-
+        
     def listbox_edit(self, wdgtObj):
         indx = wdgtObj.curselection()[0]
         wdgtObj.start_edit(indx, self.listbox_edit_callback)
         print("DEBUG: listbox_edit():: Focus returned")
-
+        
     def listbox_edit_callback(self, wdgtObj):
         self.fo.rename(DataHandle.EditLbox_new_entry)
         DataHandle.slctn_path['category'] = DataHandle.EditLbox_new_entry
         DataHandle.lb_last_focus.focus_set()
-
+        
     def listbox_delete(self, wdgtObj):
         wdgtObj = self.root.focus_get()
         elem = wdgtObj.get(wdgtObj.curselection()[0])
@@ -486,31 +470,31 @@ class PyPadGUI():
 
             if wdgtObj.elem_type == "category":
                 self.file_list.delete(0, "end")
-
+    
     """ Public Notepad Methods"""
     def notepad_edit_event(self, event):
         if self.notepad.edit_modified():
             self.status("Modified")
         else:
             self.status("Saved")
-
+            
     def notepad_enable(self):
         self.notepad.config(cursor="xterm")
         self.notepad.config(bg="#ffffff")
         self.notepad.config(state="normal")
 
         self.status()
-
+        
     def notepad_disable(self):
         self.notepad.config(cursor="arrow")
         self.notepad.config(bg="#F0F0F0")
         self.notepad.config(state="disabled")
 
         self.status("Nothing Selected")
-
+        
     def notepad_clear(self):
         self.notepad.delete("0.0", "end")
-
+        
     def notepad_open(self, file):
         self.status("Opening...")
         try:
@@ -531,7 +515,7 @@ class PyPadGUI():
 
         self.status("Opened")
         self.notepad.edit_modified(False)
-
+        
     def notepad_save(self):
         self.status("Saving...")
         print(f"DEBUG: notepad_save():: {DataHandle.slctn_path}")
@@ -556,45 +540,22 @@ class PyPadGUI():
         self.status("Saved")
         self.notepad.edit_modified(False)
         return True
-
+        
     """ Misc UI Functions"""
     def enable_ui_btns(self):
         self.ui_edit['state'] = 'disabled'
         self.ui_delete['state'] = 'disabled'
-
+        
     def disable_ui_btns(self):
         self.ui_edit['state'] = 'normal'
         self.ui_edit['state'] = 'normal'
-
+        
     def status(self, state=None):
-        """Update status bar path location and/or included state message."""
-        padding = "    "
-        pad_char = "-"
-        pad = f"{padding}{pad_char}{padding}"
-
-        cat = DataHandle.slctn_path['category']
-        if cat:
-            cat = cat.capitalize()
-        else:
-            cat = ""
-
-        file = DataHandle.slctn_path['file']
-        if file:
-            file = file.capitalize()
-        else:
-            file = ""
-
-        path = f"{cat} \ {file}"
-
-        if state:
-            DataHandle.status = f"{path}{pad}{state}"
-        else:
-            DataHandle.status = f"{path}{pad}{DataHandle.slctn_path['file']}"
-            
         self.sb['text'] = "status()"
+        self.sb['text'] = "Hello World - Testing..."
 
-    """Mainloop()"""
     def mainloop(self):
+        self.status()
         self.root.mainloop()
 
 
