@@ -4,7 +4,7 @@
 #
 # v0.0.1 Beta
 # Date: 8-19-2023
-# Author: Tom Smith (Thomas DOT Briggs DOT Smith AT Gmail DOT com)
+# Author: Tom Smith (tom DOT briggs DOT smith AT gmail DOT com)
 
 
 import os
@@ -22,7 +22,7 @@ class DataHandle:
     EditLbox_new_entry = None
     slctn_path = {'category' : None, 'file' : None}
     lb_last_focus = None
-    status = ""
+    status = "I've got a lovely bunch of coconuts."
 
 
 class FileOps():
@@ -317,12 +317,43 @@ class PyPadGUI():
         self.notepad_disable()
         self.notepad.pack(side="right", fill="both", expand=1)
 
-    def statusbar(self):
-        self.sb = tk.Label(self.status_frame)
-        self.sb.pack(side="right", fill="y")
+    def statusbar(self, text=None):
+        """God intervened with an impossible attribute error, so....
+        I write bad code."""
+        try: #if not self.sb
+            self.sb
+        except: #then
+            self.sb = tk.Label(self.status_frame)
+            self.sb.pack(side="right", fill="y")
+            
+        else: #else 
+            """Update status bar path location and/or included state message."""
+            padding = "    "
+            pad_char = "-"
+            pad = ""
 
-        self.sb['text'] = "StatusBar"
-        self.testvar = "testing"
+            cat = DataHandle.slctn_path['category']
+            if cat:
+                cat = cat.capitalize()
+                pad = f"{padding}{pad_char}{padding}"
+            else:
+                cat = ""
+
+            file = DataHandle.slctn_path['file']
+            if file:
+                file = f" \ {file.capitalize()}"
+                pad = f"{padding}{pad_char}{padding}"
+            else:
+                file = ""
+
+            path = f"{cat}{file}"
+
+            if text:
+                DataHandle.status = f"{path}{pad}{text}"
+            else:
+                DataHandle.status = f"{path}{pad}{DataHandle.status}"
+                
+            self.sb['text'] = DataHandle.status
 
     """ Public Event Handling Methods"""
     def category_click_event(self, event):
@@ -392,7 +423,7 @@ class PyPadGUI():
             print("ERROR:: PyPadGUI:: set_slctn_path():: unknown circumstance.")
 
         print(f"DEBUG: set_slctn_path(POST):: {DataHandle.slctn_path}")
-        self.status()
+        self.statusbar()
         return fr"{DataHandle.slctn_path['category']}\\{DataHandle.slctn_path['file']}"
 
     """ Public Listbox Methods"""
@@ -490,29 +521,29 @@ class PyPadGUI():
     """ Public Notepad Methods"""
     def notepad_edit_event(self, event):
         if self.notepad.edit_modified():
-            self.status("Modified")
+            self.statusbar("Modified")
         else:
-            self.status("Saved")
+            self.statusbar("Saved")
 
     def notepad_enable(self):
         self.notepad.config(cursor="xterm")
         self.notepad.config(bg="#ffffff")
         self.notepad.config(state="normal")
 
-        self.status()
+        self.statusbar()
 
     def notepad_disable(self):
         self.notepad.config(cursor="arrow")
         self.notepad.config(bg="#F0F0F0")
         self.notepad.config(state="disabled")
 
-        self.status("Nothing Selected")
+        self.statusbar("Nothing Open")
 
     def notepad_clear(self):
         self.notepad.delete("0.0", "end")
 
     def notepad_open(self, file):
-        self.status("Opening...")
+        self.statusbar("Opening...")
         try:
             fd = open(self.fo.get_base(), "r")
         except FileNotFoundError:
@@ -529,11 +560,11 @@ class PyPadGUI():
 
         fd.close()
 
-        self.status("Opened")
+        self.statusbar("Opened")
         self.notepad.edit_modified(False)
 
     def notepad_save(self):
-        self.status("Saving...")
+        self.statusbar("Saving...")
         print(f"DEBUG: notepad_save():: {DataHandle.slctn_path}")
         if DataHandle.slctn_path['file'] == None or \
             DataHandle.slctn_path['category'] == None:
@@ -553,7 +584,7 @@ class PyPadGUI():
         fd.write(blob)
         fd.close()
 
-        self.status("Saved")
+        self.statusbar("Saved")
         self.notepad.edit_modified(False)
         return True
 
@@ -565,33 +596,6 @@ class PyPadGUI():
     def disable_ui_btns(self):
         self.ui_edit['state'] = 'normal'
         self.ui_edit['state'] = 'normal'
-
-    def status(self, state=None):
-        """Update status bar path location and/or included state message."""
-        padding = "    "
-        pad_char = "-"
-        pad = f"{padding}{pad_char}{padding}"
-
-        cat = DataHandle.slctn_path['category']
-        if cat:
-            cat = cat.capitalize()
-        else:
-            cat = ""
-
-        file = DataHandle.slctn_path['file']
-        if file:
-            file = file.capitalize()
-        else:
-            file = ""
-
-        path = f"{cat} \ {file}"
-
-        if state:
-            DataHandle.status = f"{path}{pad}{state}"
-        else:
-            DataHandle.status = f"{path}{pad}{DataHandle.slctn_path['file']}"
-            
-        self.sb['text'] = "status()"
 
     """Mainloop()"""
     def mainloop(self):

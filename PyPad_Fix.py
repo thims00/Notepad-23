@@ -197,6 +197,11 @@ class PyPadGUI():
         self.__GUI__()
         self.__file_menu__()
         self.__ui_frames__()
+        self.__ui_buttons__()
+        self.__categories__()
+        self.__files__()
+        self.__notepad__()
+        self.__event_handler__()
         self.statusbar()
 
     """ Local GUI Methods"""
@@ -301,12 +306,40 @@ class PyPadGUI():
         self.notepad_disable()
         self.notepad.pack(side="right", fill="both", expand=1)
 
-    def statusbar(self):
-        self.sb = tk.Label(self.status_frame)
-        self.sb.pack(side="right", fill="y")
+    def statusbar(self, text=None):
+        """God intervened with an impossible attribute error, so....
+        I write bad code."""
+        try:
+            self.sb
+        except:
+            self.sb = tk.Label(self.status_frame)
+            self.sb.pack(side="right", fill="y")
+        else:
+            """Update status bar path location and/or included state message."""
+            padding = "    "
+            pad_char = "-"
+            pad = f"{padding}{pad_char}{padding}"
 
-        self.sb['text'] = "StatusBar"
-        self.testvar = "testing"
+            cat = DataHandle.slctn_path['category']
+            if cat:
+                cat = cat.capitalize()
+            else:
+                cat = ""
+
+            file = DataHandle.slctn_path['file']
+            if file:
+                file = file.capitalize()
+            else:
+                file = ""
+
+            path = f"{cat} \ {file}"
+
+            if text:
+                DataHandle.status = f"{path}{pad}{text}"
+            else:
+                DataHandle.status = f"{path}{pad}{DataHandle.status}"
+                
+            self.sb['text'] = DataHandle.status
         
     """ Public Event Handling Methods"""
     def category_click_event(self, event):
@@ -376,7 +409,7 @@ class PyPadGUI():
             print("ERROR:: PyPadGUI:: set_slctn_path():: unknown circumstance.")
 
         print(f"DEBUG: set_slctn_path(POST):: {DataHandle.slctn_path}")
-        self.status()
+        self.statusbar()
         return fr"{DataHandle.slctn_path['category']}\\{DataHandle.slctn_path['file']}"
         
     """ Public Listbox Methods"""
@@ -474,23 +507,23 @@ class PyPadGUI():
     """ Public Notepad Methods"""
     def notepad_edit_event(self, event):
         if self.notepad.edit_modified():
-            self.status("Modified")
+            self.statusbar()
         else:
-            self.status("Saved")
+            self.statusbar()
             
     def notepad_enable(self):
         self.notepad.config(cursor="xterm")
         self.notepad.config(bg="#ffffff")
         self.notepad.config(state="normal")
 
-        self.status()
+        self.statusbar()
         
     def notepad_disable(self):
         self.notepad.config(cursor="arrow")
         self.notepad.config(bg="#F0F0F0")
         self.notepad.config(state="disabled")
 
-        self.status("Nothing Selected")
+        self.statusbar()
         
     def notepad_clear(self):
         self.notepad.delete("0.0", "end")
@@ -550,12 +583,7 @@ class PyPadGUI():
         self.ui_edit['state'] = 'normal'
         self.ui_edit['state'] = 'normal'
         
-    def status(self, state=None):
-        self.sb['text'] = "status()"
-        self.sb['text'] = "Hello World - Testing..."
-
     def mainloop(self):
-        self.status()
         self.root.mainloop()
 
 
