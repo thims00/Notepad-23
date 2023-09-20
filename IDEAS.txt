@@ -8,6 +8,8 @@
 - Backup option to archive the contents of the database
 - folder delete undo option
 - Make the navigation panes collapsible/hideable.
+- Encryption option/wrapper
+- Vim keybindings to the extent of vim modes, with togglability in options.
 
 Keybindings:
 - Vim style keybindings for navigation
