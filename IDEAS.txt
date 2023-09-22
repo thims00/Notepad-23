@@ -10,6 +10,9 @@
 - Make the navigation panes collapsible/hideable.
 - Encryption option/wrapper
 - Vim keybindings to the extent of vim modes, with togglability in options.
+- File structure generator; EG. make 20 folders all with 10 files named a, b, c...
+- Click Open: and you have the option for concat or append then the file opened goes into the open notepad window.
+
 
 Keybindings:
 - Vim style keybindings for navigation

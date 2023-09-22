@@ -210,8 +210,7 @@ class PyPadGUI():
 
         self.__GUI__()
         self.__file_menu__()
-        self.__ui_frames__()
-        self.__ui_buttons__()
+        self.__ui__()
         self.__categories__()
         self.__files__()
         self.__notepad__()
@@ -266,46 +265,56 @@ class PyPadGUI():
         # Stack our config
         self.root.config(menu=self.menubar)
 
-    def __ui_frames__(self):
+    def __ui__(self):
+        # Frame Structure
         self.upper_frame = tk.Frame(self.root)
-        self.upper_frame.pack(side="top", fill="both", expand=1)
+        self.upper_frame.pack(side="top", fill="both", expand=True)
 
         self.left_frame = tk.Frame(self.upper_frame)
         self.left_frame.pack(side="left", fill="both")
 
         self.right_frame = tk.Frame(self.upper_frame)
-        self.right_frame.pack(side="right", fill="both")
-
+        self.right_frame.pack(side="right", fill="both", expand=True)
+        
+        self.ui_btn_frame = tk.Frame(self.left_frame)
+        self.ui_btn_frame.pack(side="top", fill="x")
+        
+        # Button Area
+        self.ui_add = tk.Button(self.ui_btn_frame, text="Add", \
+            command=self.listbox_add_clicked)
+        self.ui_add.pack(side="left", expand=True, fill="x")
+        
+        self.ui_edit = tk.Button(self.ui_btn_frame, text="Edit", \
+            command=self.listbox_edit_clicked)
+        self.ui_edit.pack(side="left", expand=True, fill="x")
+        
+        self.ui_delete = tk.Button(self.ui_btn_frame, text="Delete", \
+            command=self.listbox_delete_clicked)
+        self.ui_delete.pack(side="left", expand=True, fill="x")
+        self.disable_ui_btns()
+        
+        # Listbox Panes
+        self.ui_pane = tk.PanedWindow(self.left_frame, orient="vertical", sashwidth=5, handlesize=12)
+        self.ui_pane.pack(fill="both", expand=1)
+        
+        # Statusbar
         self.status_frame = tk.Frame(self.root)
         self.status_frame.pack(side="bottom", fill="x")
         self.status_frame['takefocus'] = False
         self.status_frame['padx'] = 3
         self.status_frame['relief'] = "sunken"
-
-    def __ui_buttons__(self):
-        self.ui_btn_frame = tk.Frame(self.left_frame)
-        self.ui_btn_frame.pack(side="top")
-
-        self.ui_add = tk.Button(self.ui_btn_frame, text="Add", command=self.listbox_add_clicked)
-        self.ui_add.pack(side="left")
-
-        self.ui_edit = tk.Button(self.ui_btn_frame, text="Edit", command=self.listbox_edit_clicked)
-        self.ui_edit.pack(side="left")
-
-        self.ui_delete = tk.Button(self.ui_btn_frame, text="Delete", command=self.listbox_delete_clicked)
-        self.ui_delete.pack(side="left")
-        
-        self.disable_ui_btns()
         
     def __categories__(self):
-        self.ctgry_list_frame = tk.Frame(self.left_frame)
-        self.ctgry_list_frame.pack(side="top")
+        #self.ctgry_list_frame = tk.Frame(self.ui_pane)
+        #self.ctgry_list_frame.pack(side="top")
         
-        self.cat_scrllbr = tk.Scrollbar(self.ctgry_list_frame)
-        self.cat_scrllbr.pack(side="right", fill="y")
+        #self.cat_scrllbr = tk.Scrollbar(self.ui_pane)
+        #self.cat_scrllbr.pack(side="right", fill="y")
 
-        self.ctgry_list = EditableListbox(self.ctgry_list_frame, yscrollcommand=self.cat_scrllbr.set)
-
+        self.ctgry_list = EditableListbox(self.ui_pane)#, yscrollcommand=self.cat_scrllbr.set)
+        #self.ctgry_list.pack(side="top")
+        self.ui_pane.add(self.ctgry_list)
+        
         # Populate categories by directory structure
         categories = os.listdir(DataHandle.datapath)
         categories.sort()
@@ -316,20 +325,19 @@ class PyPadGUI():
         for categ in categories:
             self.ctgry_list.insert("end", categ)
 
-        self.ctgry_list.pack(side="top")
-
         self.ctgry_list.elem_type = "category"
 
     def __files__(self):
         # File listview
-        self.file_list_frame = tk.Frame(self.left_frame)
-        self.file_list_frame.pack(side="top")
+        #self.file_list_frame = tk.Frame(self.left_frame)
+        #self.file_list_frame.pack(side="top")
 
-        self.file_scrllbr = tk.Scrollbar(self.file_list_frame)
-        self.file_scrllbr.pack(side="right", fill="y")
+        #self.file_scrllbr = tk.Scrollbar(self.ui_pane)
+        #self.file_scrllbr.pack(side="right", fill="y")
 
-        self.file_list = EditableListbox(self.file_list_frame, yscrollcommand=self.file_scrllbr.set)
-        self.file_list.pack(side="top")
+        self.file_list = EditableListbox(self.ui_pane)#, yscrollcommand=self.file_scrllbr.set)
+        #self.file_list.pack(side="top")
+        self.ui_pane.add(self.file_list)
         
         self.file_list.elem_type = "file"
 
@@ -337,7 +345,7 @@ class PyPadGUI():
         # Notepad Window
         self.notepad = tk.Text(self.right_frame)
         self.notepad_disable()
-        self.notepad.pack(side="right", fill="both", expand=1)
+        self.notepad.pack(side="right", fill="both", expand=True)
 
     """Public Functions"""
     def statusbar(self, text=None):
@@ -449,6 +457,7 @@ class PyPadGUI():
     
     """Public Listbox Methods"""
     def listbox_add_clicked(self):
+        
         self.listbox_handle("add")
         print(f"DEBUG: listbox_add_clicked():: {DataHandle.slctn_path}")
 

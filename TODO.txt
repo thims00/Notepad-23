@@ -9,3 +9,4 @@
 - Begin incorporating keyboard shortcuts for save, undo/redo, etc.
 - Fix up the _event_handle() function. The naming convention and general order of self.pasvData in EditableListbox() is very fragile and prone to error.
 - Do file validation so files can't be created in parent category folder.
+- Incorporate vertical paned windows for resizing.
