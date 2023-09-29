@@ -15,7 +15,7 @@ import tkinter.messagebox as mb
 
 
 class DataHandle:
-    basepath = r'C:\Users\rootp\Documents\Code\Python\GUI\PyPad'
+    basepath = r'C:\Users\rootp\Documents\Code\Python\GUI\Notepad 23'
     datapath = r'userData\Categories'
     listbox_elem_type = None
     EditLbox_old_entry = None
@@ -91,7 +91,7 @@ class FileOps():
 
     def is_dir(self):
         file = self.get_base()
-        print(f"DEBUG: is_dir():: {file}")
+        #print(f"DEBUG: is_dir():: {file}")
         return os.path.isdir(file)
 
     def is_rw(self):
@@ -206,7 +206,10 @@ class EditableListbox(tk.Listbox):
 
 class PyPadGUI():
     def __init__(self):
+        # TODO: Change the rest of class to use dh.
+        self.dh = DataHandle()
         self.fo = FileOps(DataHandle.basepath, DataHandle.datapath)
+
 
         self.__GUI__()
         self.__file_menu__()
@@ -228,6 +231,8 @@ class PyPadGUI():
         self.root.rowconfigure(0, weight=1)
 
     def __event_handler__(self):
+        self.root.bind("<ButtonRelease-1>", self.click_event)
+    
         self.ctgry_list.bind('<ButtonRelease-1>', self.category_click_event)
         self.file_list.bind('<ButtonRelease-1>', self.file_click_event)
 
@@ -388,15 +393,15 @@ class PyPadGUI():
     def set_slctn_path(self):
         """Update the UserHandle selection path after environment changes.
         Works based off the highlighted curselection()"""
-        print(f"DEBUG: set_slctn_path(PRE):: {DataHandle.slctn_path}")
+        #print(f"DEBUG: set_slctn_path(PRE):: {DataHandle.slctn_path}")
         wdgt = self.root.focus_get()
 
         try:
             indx = wdgt.curselection()[0]
-            print("DEBUG: set_slctn_path():: Try block")
+            #print("DEBUG: set_slctn_path():: Try block")
         except:
             indx = wdgt.size() - 1
-            print("DEBUG: set_slctn_path():: Except block")
+            #print("DEBUG: set_slctn_path():: Except block")
 
 
         if wdgt.elem_type == "file":
@@ -409,11 +414,14 @@ class PyPadGUI():
         else:
             print("ERROR:: PyPadGUI:: set_slctn_path():: unknown circumstance.")
 
-        print(f"DEBUG: set_slctn_path(POST):: {DataHandle.slctn_path}")
+        #print(f"DEBUG: set_slctn_path(POST):: {DataHandle.slctn_path}")
         self.statusbar()
         return fr"{DataHandle.slctn_path['category']}\\{DataHandle.slctn_path['file']}"
         
     """Public Event Handling Methods"""
+    def click_event(self, event):
+        self.highlight_selection()
+    
     def category_click_event(self, event):
         self.enable_ui_btns()
         self.notepad_save()
@@ -439,6 +447,7 @@ class PyPadGUI():
         DataHandle.lb_last_focus = self.ctgry_list
 
     def file_click_event(self, event, indx=None):
+        self.enable_ui_btns()
         if DataHandle.slctn_path['file']:
             self.notepad_save()
 
@@ -453,13 +462,13 @@ class PyPadGUI():
             self.notepad_clear()
             self.notepad_open(DataHandle.slctn_path['file'])
             DataHandle.lb_last_focus = self.file_list
-            self.notepad.focus_set()
+            #self.notepad.focus_set()
     
     """Public Listbox Methods"""
     def listbox_add_clicked(self):
         
         self.listbox_handle("add")
-        print(f"DEBUG: listbox_add_clicked():: {DataHandle.slctn_path}")
+        #print(f"DEBUG: listbox_add_clicked():: {DataHandle.slctn_path}")
 
     def listbox_edit_clicked(self):
         self.listbox_handle("edit")
@@ -490,7 +499,7 @@ class PyPadGUI():
         # Process UI event code and make respective handle calls
         if func == "add":
             self.listbox_add(lb_widget)
-            print(f"DEBUG: listbox_handle():: {DataHandle.slctn_path}")
+            #print(f"DEBUG: listbox_handle():: {DataHandle.slctn_path}")
 
         elif func == "edit":
             self.listbox_edit(lb_widget)
@@ -503,7 +512,7 @@ class PyPadGUI():
             return None
 
     def listbox_add(self, wdgtObj):
-        print(f"DEBUG: listbox_add():: {DataHandle.slctn_path}")
+        #print(f"DEBUG: listbox_add():: {DataHandle.slctn_path}")
         val = "New Entry"
         entry = val
         
@@ -519,8 +528,8 @@ class PyPadGUI():
         wdgtObj.start_edit(indx, self.listbox_add_callback, self.listbox_cancel_callback)
 
     def listbox_add_callback(self, wdgtObj):
-        print(f"DEBUG: listbox_add_callback():: {DataHandle.slctn_path}")
-        print(f"DEBUG: listbox_add_callback():: winfo_name(wdgtObj):: {wdgtObj.winfo_name()}")
+        #print(f"DEBUG: listbox_add_callback():: {DataHandle.slctn_path}")
+        #print(f"DEBUG: listbox_add_callback():: winfo_name(wdgtObj):: {wdgtObj.winfo_name()}")
         DataHandle.lb_last_focus.focus_set()
         self.set_slctn_path()
         
@@ -557,7 +566,7 @@ class PyPadGUI():
     def listbox_edit(self, wdgtObj):
         indx = wdgtObj.curselection()[0]
         wdgtObj.start_edit(indx, self.listbox_edit_callback)
-        print("DEBUG: listbox_edit():: Focus returned")
+        #print("DEBUG: listbox_edit():: Focus returned")
 
     def listbox_edit_callback(self, wdgtObj):
         self.fo.rename(DataHandle.EditLbox_new_entry)
@@ -622,7 +631,7 @@ class PyPadGUI():
 
     def notepad_save(self):
         self.statusbar("Saving...")
-        print(f"DEBUG: notepad_save():: {DataHandle.slctn_path}")
+        #print(f"DEBUG: notepad_save():: {DataHandle.slctn_path}")
         if DataHandle.slctn_path['file'] == None or \
             DataHandle.slctn_path['category'] == None:
             self.statusbar("Nothing to Save")
@@ -655,6 +664,32 @@ class PyPadGUI():
         self.ui_edit['state'] = 'disabled'
         self.ui_delete['state'] = 'disabled'
 
+    def highlight_selection(self):
+        """Update the selection highlight color respective to the path.
+        TODO: Rewrite this as to not require .get calls every loop"""
+        bg_color = "#FFFFFF"
+        fg_color = "#000000"
+        bg_select = "#0078d7"
+        fg_select = "#FFFFFF"
+
+        select_opts = {'bg' : bg_color, 'fg' : fg_color}
+        selected_opts = {'bg' : bg_select, 'fg' : fg_select}
+        
+        categ_size = self.ctgry_list.size() - 1
+        file_size = self.file_list.size() - 1
+        
+        for item in range(categ_size):
+            if self.ctgry_list.get(item) == self.dh.slctn_path['category']:
+                self.ctgry_list.itemconfig(item, selected_opts)
+            else:
+                self.ctgry_list.itemconfig(item, select_opts)
+        
+        for item in range(file_size):
+            if self.file_list.get(item) == self.dh.slctn_path['file']:
+                self.file_list.itemconfig(item, selected_opts)
+            else:
+                self.file_list.itemconfig(item, select_opts)
+    
     """Mainloop()"""
     def mainloop(self):
         self.root.mainloop()
