@@ -15,11 +15,12 @@ import tkinter.messagebox as mb
 
 
 class DataHandle:
-    basepath = r'C:\Users\rootp\Documents\Code\Python\GUI\Notepad 23'
+    basepath = os.getcwd()
     datapath = r'userData\Categories'
     listbox_elem_type = None
     EditLbox_old_entry = None
     EditLbox_new_entry = None
+    slctn_index = {'category' : None, 'file' : None}
     slctn_path = {'category' : None, 'file' : None}
     lb_last_focus = None
     status = "I've got a lovely bunch of coconuts."
@@ -420,16 +421,18 @@ class PyPadGUI():
         
     """Public Event Handling Methods"""
     def click_event(self, event):
-        self.highlight_selection()
+            self.highlight_selection()
+        
     
     def category_click_event(self, event):
-        self.enable_ui_btns()
+        #self.enable_ui_btns()
         self.notepad_save()
         self.notepad_clear()
 
         self.set_slctn_path()
 
         indx = self.ctgry_list.curselection()[0]
+        self.dh.slctn_index['category'] = indx
         selctn = self.ctgry_list.get(indx)
         DataHandle.slctn_path['category'] = selctn
         DataHandle.slctn_path['file'] = None
@@ -447,7 +450,7 @@ class PyPadGUI():
         DataHandle.lb_last_focus = self.ctgry_list
 
     def file_click_event(self, event, indx=None):
-        self.enable_ui_btns()
+        #self.enable_ui_btns()
         if DataHandle.slctn_path['file']:
             self.notepad_save()
 
@@ -458,7 +461,8 @@ class PyPadGUI():
                 print("ERROR: PyPadGUI:: file_click_event():: Index out of range")
 
             self.set_slctn_path()
-
+            self.dh.slctn_index['file'] = indx
+            
             self.notepad_clear()
             self.notepad_open(DataHandle.slctn_path['file'])
             DataHandle.lb_last_focus = self.file_list
@@ -667,28 +671,29 @@ class PyPadGUI():
     def highlight_selection(self):
         """Update the selection highlight color respective to the path.
         TODO: Rewrite this as to not require .get calls every loop"""
-        bg_color = "#FFFFFF"
-        fg_color = "#000000"
-        bg_select = "#0078d7"
-        fg_select = "#FFFFFF"
+        bg_color = '#FFFFFF'
+        fg_color = '#000000'
+        bg_select = '#0078d7'
+        fg_select = '#FFFFFF'
 
         select_opts = {'bg' : bg_color, 'fg' : fg_color}
         selected_opts = {'bg' : bg_select, 'fg' : fg_select}
         
         categ_size = self.ctgry_list.size() - 1
         file_size = self.file_list.size() - 1
-        
+
         for item in range(categ_size):
+            self.ctgry_list.itemconfig(item, select_opts)
+
             if self.ctgry_list.get(item) == self.dh.slctn_path['category']:
                 self.ctgry_list.itemconfig(item, selected_opts)
-            else:
-                self.ctgry_list.itemconfig(item, select_opts)
         
         for item in range(file_size):
+            self.file_list.itemconfig(item, select_opts)
+            
             if self.file_list.get(item) == self.dh.slctn_path['file']:
                 self.file_list.itemconfig(item, selected_opts)
-            else:
-                self.file_list.itemconfig(item, select_opts)
+
     
     """Mainloop()"""
     def mainloop(self):
