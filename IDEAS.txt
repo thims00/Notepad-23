@@ -1,4 +1,3 @@
-- NAME: PyPid
 - Archive feature to allow easily backing up to a flat file, directory, or zip,gzip,bzip, etc.
 - Export feature for dropping specific files to pastebin
 - Github export

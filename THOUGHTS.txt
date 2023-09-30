@@ -1,9 +1,0 @@
-- EditableListbox
-	- What should an editable item input do when you click another element during editing? Accept? Cancel? and/or message?
-
-
-
-NAMES:
-- PyeSis - Python Thesis Handle
-	- nitched: Pyesis (Noun): THe formation or discharge of pus, suppuration.
-- PyAno

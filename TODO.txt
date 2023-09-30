@@ -1,12 +1,10 @@
-- File location/directory checking and error handling. "userData" and the respective directory structure will need to be initiated and verified.
-- Add user modifiable settings for storage of data structure
-	- What about a .gitignore?
-- Statusbar: 
-	- List the path of selection "Category / Specific file"
-
-- Make the file list sorted alphanumerically
-
-- Begin incorporating keyboard shortcuts for save, undo/redo, etc.
-- Fix up the _event_handle() function. The naming convention and general order of self.pasvData in EditableListbox() is very fragile and prone to error.
-- Do file validation so files can't be created in parent category folder.
-- Incorporate vertical paned windows for resizing.
+- Introduce file read/write lock files to setup basis for clean, multiple instance operations.
+- Option to sort the file list alphanumerically
+- Keyboard shortcuts:
+	- Standard shortcuts
+	- Vim style navigation
+- Decide on file creation in parent folder; if so, restructure to allow parent files
+- Undo/Redo Operations
+- Scrollbar
+	- Notepad
+	- File navigation panes
